@@ -3,43 +3,59 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
-// TODO: MOVE THIS TO mnkt_renderer
-typedef struct {
-        uint32_t        width;                  ///< Width of the image
-        uint32_t        height;                 ///< Height of the image
-        int*            pixels;                 ///< The pixels of the image packed as 32 bit integers in RGBA encoding
-} Image_t;
+#include "mnktRenderer.h"
 
 
-int savePPMImage(const char* filename, const Image_t* image);
+int savePPMImage(const char* filename, const Framebuffer_t* fb);
 
 
 int main()
 {
-        Image_t img;
-        img.width = 128;
-        img.height = 128;
+        // Setup a framebuffer
+        Framebuffer_t fb;
 
-        // Allocate memory to store image pixels
-        img.pixels = malloc(sizeof(int) * img.width * img.height);
-        if(img.pixels == NULL)
+        fb.width = 128;
+        fb.height = 128;
+
+        // Allocate memory for the framebuffer's color buffer
+        fb.colorBuffer = malloc( fb.width * fb.height * 3 * sizeof(unsigned char) );
+        if(fb.colorBuffer == NULL)
         {
-                fprintf(stderr, "ERROR: failed to allocate memory to store image pixels!\n");
+                fprintf(stderr, "ERROR: failed to allocate memory for the framebuffer's color buffer!\n");
                 return 0;
         }
 
-        // Fill the image with the red color
-        for(uint32_t y = 0; y < img.height; ++y)
+        // Allocate memory for the framebuffer's depth buffer
+        fb.depthBuffer = malloc( fb.width * fb.height * sizeof(float) );
+        if(fb.depthBuffer == NULL)
         {
-                for(uint32_t x = 0; x < img.width; ++x)
-                        img.pixels[ (y * img.width) + x ] = 255 << 24;
+                free(fb.colorBuffer);
+                fprintf(stderr, "ERROR: failed to allocate memory for the framebuffer's color buffer!\n");
+                return 0;
         }
 
-        // Save image to file
-        savePPMImage("image.ppm", &img);
+        // Now let's render a rectangle!!!!
 
-        free(img.pixels);
+        // Define the vertices of the triangle (clockwise order)
+        float vertices[] = {
+                -0.5f, -0.5f, 0.0f,
+                0.0f, 0.5f, 0.0f,
+                0.5f, -0.5f, 0.0f
+        };
+
+        // Clear framebuffer content
+        mnkt_framebufferClearColor(255, 116, 0, &fb);
+        mnkt_framebufferClearDepth(0.0f, &fb);
+
+        mnkt_draw(vertices, sizeof(vertices) / sizeof(vertices[0]), &fb);
+
+        // Save framebuffer's content to file
+        savePPMImage("image.ppm", &fb);
+
+        // Deallocate framebuffer's memory
+        free(fb.colorBuffer);
+        free(fb.depthBuffer);
+
         return 0;
 }
 
@@ -47,10 +63,10 @@ int main()
 /**
  * Saves the given image on file system as a PPM file
  * @param filename Name to be used for the PPM image file
- * @param image Image of which content must be saved
+ * @param fb Framebuffer of which content must be saved
  * @return Zero on success, non zero on failure
 */
-int savePPMImage(const char* filename, const Image_t* image)
+int savePPMImage(const char* filename, const Framebuffer_t* fb)
 {
         const uint32_t maxColorValue = 255;
 
@@ -60,9 +76,9 @@ int savePPMImage(const char* filename, const Image_t* image)
                 return -1;
         }
 
-        if(image == NULL || image->pixels == NULL)
+        if(fb == NULL || fb->colorBuffer == NULL)
         {
-                fprintf(stderr, "ERROR: savePPMImage() failed, no image is given!\n");
+                fprintf(stderr, "ERROR: savePPMImage() failed, no framebuffer is given!\n");
                 return -1;
         }
 
@@ -74,20 +90,19 @@ int savePPMImage(const char* filename, const Image_t* image)
         }
 
         fprintf(imgFile, "P3\n");
-        fprintf(imgFile, "%u %u %u\n", image->width, image->height, maxColorValue);
+        fprintf(imgFile, "%u %u %u\n", fb->width, fb->height, maxColorValue);
 
         size_t currIndex = 0;
-        for(uint32_t y = 0; y < image->height; ++y)
+        for(uint32_t y = 0; y < fb->height; ++y)
         {
-                for(uint32_t x = 0; x < image->width; ++x)
+                for(uint32_t x = 0; x < fb->width; ++x)
                 {
-                        unsigned char r = image->pixels[currIndex] >> 24;
-                        unsigned char g = image->pixels[currIndex] >> 16;
-                        unsigned char b = image->pixels[currIndex] >> 8;
+                        unsigned char r = fb->colorBuffer[currIndex];
+                        unsigned char g = fb->colorBuffer[currIndex + 1];
+                        unsigned char b = fb->colorBuffer[currIndex + 2];
 
                         fprintf(imgFile, "%d %d %d ", r, g, b);
-
-                        ++currIndex;
+                        currIndex += 3;
                 }
 
                 fputc('\n', imgFile);
