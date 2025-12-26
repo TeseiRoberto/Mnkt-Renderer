@@ -5,57 +5,51 @@
  * Defines the graphics API implemented by the mnktRenderer.
 */
 
-#ifndef MNKT_RENDERER
-#define MNKT_RENDERER
+#ifndef MNKT_RENDERER_H
+#define MNKT_RENDERER_H
 
 #include <stdint.h>
 #include <stddef.h>
 
+#include "image.h"
+#include "shader.h"
 #include "framebuffer.h"
 
 
 /**
- * @struct Image
- * Models a 2D, RGBA encoded, image.
-*/
-typedef struct {
-        uint32_t        width;                  ///< Width of the image
-        uint32_t        height;                 ///< Height of the image
-        int*            pixels;                 ///< The pixels of the image packed as 32 bit integers in RGBA encoding
-} Image_t;
-
-
-
-/**
- * @function mnkt_drawPoint
- * Draws a sequence of 2D points
- * @param vertices vertices that defines the points to be drawn
+ * @function mnkt_draw2DPoint
+ * Draws a sequence of 2D points of the given size
+ * @param vertices Array that defines the x and y coordinates of each point to be drawn
  * @param verticesCount Number of elements stored in the given vertices array
+ * @param pointSize Size of the points to be drawn expressed in pixels
+ * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered points should be outputted
 */
-void mnkt_drawPoint(float* vertices, const size_t verticesCount, /*TODO: Add shaders */ Framebuffer_t* fb);
+void mnkt_draw2DPoint(float* vertices, const size_t verticesCount, const size_t pointSize, ShaderProgram_t* shader, Framebuffer_t* fb);
 
 
 /**
- * @function mnkt_drawLine
+ * @function mnkt_draw2DLine
  * Draws a 2D segmented line
- * @param vertices vertices that defines the line to be drawn
+ * @param vertices Array that defines the x and y coordinates of each point making up the line to be drawn
  * @param verticesCount Number of elements stored in the given vertices array
+ * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered line should be outputted
 */
-void mnkt_drawLine(float* vertices, const size_t verticesCount, /*TODO: Add shaders */ Framebuffer_t* fb);
+void mnkt_draw2DLine(float* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb);
 
 
 /**
  * @function mnkt_draw
  * Draws a sequence of triangles
- * @param vertices vertices that defines the triangles to be drawn
+ * @param vertices Vertices that defines the triangles to be drawn
  * @param verticesCount Number of elements stored in the given vertices array
+ * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered triangles should be outputted
 */
-void mnkt_draw(float* vertices, const size_t verticesCount, /*TODO: Add shaders */ Framebuffer_t* fb);
+void mnkt_draw(float* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb);
 
 
-#endif // MNKT_RENDERER
+#endif // MNKT_RENDERER_H
 
 
