@@ -15,18 +15,11 @@
 
 
 /**
- * @macro MAX_VERTEX_SHADER_IN_PARAMS
- * Maximum number of additional parameters that can be passed to the vertex shader
-*/
-#define MAX_VERTEX_SHADER_IN_PARAMS     8
-
-
-/**
- * @macro MAX_VERTEX_SHADER_OUT_PARAMS
+ * @macro MAX_VARYING_PARAMS
  * Maximum number of additional parameters that can be outputted from the vertex shader,
  * such parameters are then passed as inputs to the fragment shader
 */
-#define MAX_VERTEX_SHADER_OUT_PARAMS     8
+#define MAX_VARYING_PARAMS     8
 
 
 /**
@@ -41,6 +34,8 @@
  * Union of all data types that can be passed as parameters to a vertex/fragment shader.
  * Is responsibility of the user to ensure that the data type used in the shader and the
  * one setted from the user code do match.
+ *
+ * This is used to implement varyings and uniforms parameters.
 */
 typedef union {
         int32_t         intData;
@@ -53,41 +48,53 @@ typedef union {
 
         Image_t*        texture;
 
+        void*           userData;
+
 } ShaderParameter_t;
 
 
 /**
  * @typedef VertexShaderFunc_t
  * Typedef for the function pointer data type that can be used as a vertex shader.
- * Such function must return a vector which components defines the final position of the vertex
+ *
+ * Such function takes as input:
+ *      - an array of varying parameters, here additional output values can be stored, those will be later passed as inputs to the fragment shader
+ *      - an array of uniform parameters
+ *
+ * Such function must output a vector which defines the coordinates of the vertex in clip space
 */
-typedef Vec4_t (*VertexShaderFunc_t)(Vec3_t* inVertex, const ShaderParameter_t* const uniforms);
+typedef Vec4_t (*VertexShaderFunc_t)(const void* vertex, ShaderParameter_t* varyings, const ShaderParameter_t* uniforms);
 
 
 /**
  * @typedef FragmentShaderFunc_t
  * Typedef for the function pointer data type that can be used as a fragment shader.
- * Such function must return a vector which components defines the color of the fragment
+ *
+ * Such function takes as input:
+ *      - an array of varying parameters, those can be outputted by the vertex shader
+ *      - an array of uniform parameters
+ *      - the coordinates of the fragment to be processed, expressed in pixels
+ *      - a flag which indicates if the fragment must be discared or not
+ *
+ * Such function must output a vector which defines the color of the fragment
 */
-typedef Vec3_t (*FragmentShaderFunc_t)(const ShaderParameter_t* const uniforms);
+typedef Vec4_t (*FragmentShaderFunc_t)(ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
 
 
 /**
  * @struct ShaderProgram_t
- * Models a shader program that must be used to compute vertices and fragments data when a
- * draw operation is invoked.
+ * Models a shader program that can be used during a draw operation
 */
 typedef struct {
+        VertexShaderFunc_t      vertexShader;                   ///< Function to be used as vertex shader
+        FragmentShaderFunc_t    fragmentShader;                 ///< Function to be used as fragment shader
 
-        VertexShaderFunc_t      vertexShader;                                           ///< Function to be used as vertex shader
-        ShaderParameter_t       vertexShaderInParams[MAX_VERTEX_SHADER_IN_PARAMS];      ///< Additional parameters to be passed as input to the vertex shader
-        
-        FragmentShaderFunc_t    fragmentShader;                                         ///< Function to be used as fragment shader
-        ShaderParameter_t       fragmentShaderInParams[MAX_VERTEX_SHADER_OUT_PARAMS];   ///< Additional parameters to be passed as input to the fragment shader (outputted from vertex shader)
+        size_t                  vertexSize;                     ///< Size in bytes of a single vertex (containing all the attributes necessary for one invocation of the vertex shader)
 
-        ShaderParameter_t       uniforms[MAX_UNIFORM_PARAMS];                           ///< Uniform parameters to be passed to shader
+        ShaderParameter_t       uniforms[MAX_UNIFORM_PARAMS];   ///< Uniform parameters to be passed to shader
 
 } ShaderProgram_t;
+
 
 
 #endif // MNKT_SHADER_H
