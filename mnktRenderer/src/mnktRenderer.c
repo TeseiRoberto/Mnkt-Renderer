@@ -8,6 +8,10 @@
 #include "mnktRenderer.h"
 
 
+static Vec2_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
+
+
+
 /**
  * @function mnkt_draw2DPoint
  * Draws a sequence of 2D points of the given size
@@ -23,8 +27,8 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
 
-        /*Vec4_t clipCoords;
-        void* currVertexData = vertices;
+        Vec4_t clipCoords;
+        char* currVertexData = vertices;
 
         ShaderParameter_t varyings[MAX_VARYING_PARAMS];
 
@@ -32,15 +36,36 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
         for(size_t i = 0; i < verticesCount; ++i)
         {
                 // Invoke the vertex shader on the current point
-                clipCoords = vertexShader(currVertexData, varyings, shader->uniforms);
+                clipCoords = shader->vertexShader(currVertexData, varyings, shader->uniforms);
                 
-                // TODO: Implement perspective division and clipping
+                // Perform perspective division
+                clipCoords = mnkt_vec4_div(&clipCoords, clipCoords.w);
 
-                // TODO: Rasterize the point and invoke the fragment shader
+                // Perform clipping (for simplicity, as OpenGL standard specifies, we discard the point if its center is not inside the view volume)
+                if(clipCoords.x < -1.0f || clipCoords.x > 1.0f)
+                        goto SKIP_VERTEX;
+
+                if(clipCoords.y < -1.0f || clipCoords.y > 1.0f)
+                        goto SKIP_VERTEX;
+
+                if(clipCoords.z < -1.0f || clipCoords.z > 1.0f)
+                        goto SKIP_VERTEX;
+
+                // Convert clip coordinates to screen coordinates
+                Vec2_t screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
+
+                // TODO: Rasterize the point and invoke the fragment shader for each fragment
                 
+                // Test code just to see it working... (TODO: REMOVE ME!!!)
+                size_t pixelIndex = (size_t) screenCoords.y * fb->width + (size_t) screenCoords.x;
+                fb->colorBuffer[pixelIndex * 3] = 0;
+                fb->colorBuffer[pixelIndex * 3 + 1] = 0;
+                fb->colorBuffer[pixelIndex * 3 + 2] = 255;
+                
+        SKIP_VERTEX:
                 // Advance into the vertices data
                 currVertexData += shader->vertexSize;
-        }*/
+        }
 }
 
 
@@ -59,7 +84,7 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
                 return;
 
         /*Vec4_t clipCoords[2];
-        void* currVertexData = vertices;
+        char* currVertexData = vertices;
 
         ShaderParameter_t varyings[MAX_VARYING_PARAMS];
 
@@ -69,7 +94,7 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
                 // Invoke vertex shader on each vertex
                 for(size_t j = 0: j < 2; ++j)
                 {
-                        clipCoords[j] = vertexShader(currVertexData, varyings, shader->uniforms);
+                        clipCoords[j] = shader->vertexShader(currVertexData, varyings, shader->uniforms);
                 
                         // Advance into the vertices data
                         currVertexData += shader->vertexSize;
@@ -98,7 +123,7 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
                 return;
 
         Vec4_t clipCoords[3];
-        void* currVertexData = vertices;
+        char* currVertexData = (char*) vertices;
 
         ShaderParameter_t varyings[3][MAX_VARYING_PARAMS];
 
@@ -114,8 +139,6 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
                         currVertexData += shader->vertexSize;
                 }
 
-                printf("\n");
-
                 // TODO: Implement perspective division and clipping
         
                 // TODO: Rasterize the triangle and invoke the fragment shader
@@ -123,3 +146,19 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
 }
 
 
+/**
+ * @function mnkt_clipToScreenCoords
+ * Converts clip coordinates to screen coordinates
+ * @param clipCoords The coordinates to be converted from clip to screen space
+ * @param screenWidth The width of the screen
+ * @param screenHeight The height of the screen
+ * @return A Vec2 which defines the coordinates, in screen space, of the given point
+*/
+Vec2_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
+{
+        return (Vec2_t)
+        {
+                .x = ( (clipCoords.x + 1) / 2 ) * screenWidth,
+                .y = ( ( (-1 * clipCoords.y) + 1) / 2) * screenHeight
+        };
+}

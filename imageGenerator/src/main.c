@@ -150,11 +150,14 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
                 0.5f, -0.5f, 0.0f
         };
 
+        const size_t numOfVertices = sizeof(vertices) / (sizeof(vertices[0]) * 3);
+
         // Clear framebuffer content
         mnkt_framebufferClearColor(255, 116, 0, fb);
         mnkt_framebufferClearDepth(0.0f, fb);
 
-        mnkt_draw(vertices, 3, shader, fb);
+        //mnkt_draw(vertices, numOfVertices shader, fb);
+        mnkt_draw2DPoint(vertices, numOfVertices, 1, shader, fb);
 }
 
 
