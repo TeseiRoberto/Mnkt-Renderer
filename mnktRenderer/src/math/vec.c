@@ -110,7 +110,7 @@ Vec3_t mnkt_vec3_cross(const Vec3_t* a, const Vec3_t* b)
         {
                 .x = (a->y * b->z) - (a->z * b->y),
                 .y = (a->z * b->x) - (a->x * b->z),
-                .x = (a->x * b->y) - (a->y * b->x),
+                .z = (a->x * b->y) - (a->y * b->x),
         };
 
 }

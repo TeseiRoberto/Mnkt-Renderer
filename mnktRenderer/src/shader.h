@@ -11,7 +11,9 @@
 
 #include <stdint.h>
 
-#include "vec.h"
+#include "math/vec.h"
+#include "image.h"
+
 
 
 /**
@@ -57,9 +59,9 @@ typedef union {
  * @typedef VertexShaderFunc_t
  * Typedef for the function pointer data type that can be used as a vertex shader.
  *
- * Such function takes as input:
- *      - an array of varying parameters, here additional output values can be stored, those will be later passed as inputs to the fragment shader
- *      - an array of uniform parameters
+ * * Such function takes as input:
+ *      - varyings: an array of additional parameters, here additional output values can be stored, those will be later passed as inputs to the fragment shader
+ *      - uniforms: an array of uniform parameters, those are set before the draw operation is invoked
  *
  * Such function must output a vector which defines the coordinates of the vertex in clip space
 */
@@ -71,14 +73,14 @@ typedef Vec4_t (*VertexShaderFunc_t)(const void* vertex, ShaderParameter_t* vary
  * Typedef for the function pointer data type that can be used as a fragment shader.
  *
  * Such function takes as input:
- *      - an array of varying parameters, those can be outputted by the vertex shader
- *      - an array of uniform parameters
- *      - the coordinates of the fragment to be processed, expressed in pixels
- *      - a flag which indicates if the fragment must be discared or not
+ *      - varyings: an array of additional parameters, those can be outputted by the vertex shader
+ *      - uniforms: an array of uniform parameters, those are set before the draw operation is invoked
+ *      - fragCoords: the coordinates of the fragment to be processed, expressed in pixels
+ *      - discard: a flag that can be set (to non zero) whithin the fragment shader to indicate that the fragment must be discarded
  *
  * Such function must output a vector which defines the color of the fragment
 */
-typedef Vec4_t (*FragmentShaderFunc_t)(ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
+typedef Vec4_t (*FragmentShaderFunc_t)(const ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
 
 
 /**

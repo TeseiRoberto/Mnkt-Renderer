@@ -8,8 +8,7 @@
 #include "mnktRenderer.h"
 
 
-static Vec2_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
-
+static          Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
 
 
 /**
@@ -52,15 +51,10 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
                         goto SKIP_VERTEX;
 
                 // Convert clip coordinates to screen coordinates
-                Vec2_t screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
+                Vec3_t screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
 
-                // TODO: Rasterize the point and invoke the fragment shader for each fragment
-                
-                // Test code just to see it working... (TODO: REMOVE ME!!!)
-                size_t pixelIndex = (size_t) screenCoords.y * fb->width + (size_t) screenCoords.x;
-                fb->colorBuffer[pixelIndex * 3] = 0;
-                fb->colorBuffer[pixelIndex * 3 + 1] = 0;
-                fb->colorBuffer[pixelIndex * 3 + 2] = 255;
+                // Rasterize the point
+                mnkt_rasterize2DPoint(&screenCoords, pointSize, shader, varyings, fb);
                 
         SKIP_VERTEX:
                 // Advance into the vertices data
@@ -148,17 +142,20 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
 
 /**
  * @function mnkt_clipToScreenCoords
- * Converts clip coordinates to screen coordinates
+ * Converts clip coordinates to screen coordinates (applies the viewport transform)
  * @param clipCoords The coordinates to be converted from clip to screen space
  * @param screenWidth The width of the screen
  * @param screenHeight The height of the screen
- * @return A Vec2 which defines the coordinates, in screen space, of the given point
+ * @return A Vec3 which defines the coordinates, in screen space, of the given point
 */
-Vec2_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
+Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
 {
-        return (Vec2_t)
+        return (Vec3_t)
         {
                 .x = ( (clipCoords.x + 1) / 2 ) * screenWidth,
-                .y = ( ( (-1 * clipCoords.y) + 1) / 2) * screenHeight
+                .y = ( ( (-1 * clipCoords.y) + 1) / 2) * screenHeight,
+                .z = ( (clipCoords.z + 1) / 2 )
         };
 }
+
+

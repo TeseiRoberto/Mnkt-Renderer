@@ -14,6 +14,7 @@
 #include "image.h"
 #include "shader.h"
 #include "framebuffer.h"
+#include "rasterizer.h"
 
 
 /**
