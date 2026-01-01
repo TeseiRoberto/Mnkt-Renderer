@@ -12,7 +12,7 @@ void    destroyResources(Framebuffer_t* fb, ShaderProgram_t* shader);
 void    renderImage(Framebuffer_t* fb, ShaderProgram_t* shader);
 
 Vec4_t  vertexShader(const void* vertex, ShaderParameter_t* varyings, const ShaderParameter_t* uniforms);
-Vec4_t  fragmentShader(ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
+Vec4_t  fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
 
 int     savePPMImage(const char* filename, const Framebuffer_t* fb);
 
@@ -83,8 +83,8 @@ int createResources(Framebuffer_t* fb, const size_t fbWidth, const size_t fbHeig
                 shader->vertexShader = vertexShader;
                 shader->fragmentShader = fragmentShader;
 
-                // Setup the size of a single vertex (we only have 3 float value which defines the position of the vertex)
-                shader->vertexSize = sizeof(float) * 3;
+                // Setup the size of a single vertex (we have 6 float values, 3 for position and 3 for color)
+                shader->vertexSize = sizeof(float) * 6;
         }
 
         return 0;
@@ -141,23 +141,34 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
                 return;
         }
 
-        // For test purpouses let's render a simple triangle for now
+        // For test purpouses let's render two simple overlapping triangles
  
-        // Define the vertices of the triangle (clockwise order)
+        // Define the vertices of the first triangle (clockwise order)
         float vertices[] = {
-                -0.5f, -0.5f, 0.0f,
-                0.0f, 0.5f, 0.0f,
-                0.5f, -0.5f, 0.0f
+        //        x       y      z                r      g       b
+                -0.5f,  -0.5f,  1.0f,           0.0f,   0.0f,   0.0f,
+                0.0f,   0.5f,   1.0f,           0.0f,   0.0f,   0.0f,
+                0.5f,   -0.5f,  0.0f,           0.0f,   0.0f,   0.0f
         };
 
-        const size_t numOfVertices = sizeof(vertices) / (sizeof(vertices[0]) * 3);
+        const size_t numOfVertices = sizeof(vertices) / (sizeof(vertices[0]) * 6);
+
+        // Define the vertices of the second triangle (clockwise order)
+        float vertices2[] = {
+        //        x       y      z                r      g       b
+                -0.5f,  -0.5f,  0.0f,           1.0f,   0.0f,   0.0f,
+                0.0f,   0.5f,   0.0f,           0.0f,   1.0f,   0.0f,
+                0.5f,   -0.5f,  0.0f,           0.0f,   0.0f,   1.0f
+        };
+
+        const size_t numOfVertices2 = sizeof(vertices2) / (sizeof(vertices2[0]) * 6);
 
         // Clear framebuffer content
         mnkt_framebufferClearColor(255, 116, 0, fb);
-        mnkt_framebufferClearDepth(0.0f, fb);
+        mnkt_framebufferClearDepth(1.0f, fb);
 
-        //mnkt_draw(vertices, numOfVertices shader, fb);
-        mnkt_draw2DPoint(vertices, numOfVertices, 1, shader, fb);
+        mnkt_draw2DPoint(vertices, numOfVertices, 0, shader, fb);       // First test draw call
+        mnkt_draw2DPoint(vertices2, numOfVertices2, 0, shader, fb);     // Second test draw call
 }
 
 
@@ -168,9 +179,14 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
  * @param varyings Array of values in which additional output parameters can be stored
  * @param uniforms Uniform variables
 */
-Vec4_t vertexShader(const void* vertex, ShaderParameter_t* variyngs, const ShaderParameter_t* uniforms)
+Vec4_t vertexShader(const void* vertex, ShaderParameter_t* varyings, const ShaderParameter_t* uniforms)
 {
+        // Extract values from the vertex
         Vec3_t* inPos = (Vec3_t*) vertex;
+        Vec3_t* inColor = (Vec3_t*) ( (char*) vertex + sizeof(float) * 3);
+
+        // For now it simply returns the input it gets
+        varyings[0].vec3 = *inColor;
 
         return (Vec4_t) { .x = inPos->x, .y = inPos->y, .z = inPos->z, .w = 1.0f };
 }
@@ -184,9 +200,15 @@ Vec4_t vertexShader(const void* vertex, ShaderParameter_t* variyngs, const Shade
  * @param fragCoords Coordinates of the fragment to be processed, expressed in screen space
  * @param discard Flag used to indicate that this fragment must be discared
 */
-Vec4_t fragmentShader(ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard)
+Vec4_t fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard)
 {
-        return (Vec4_t) { .r = 0.7f, .g = 0.25f, .b = 0.0f, .a = 1.0f };
+        // For now it simply returns the input it gets
+        return (Vec4_t) {
+                .r = varyings[0].vec3.r,
+                .g = varyings[0].vec3.g,
+                .b = varyings[0].vec3.b,
+                1.0f
+        };
 }
 
 
