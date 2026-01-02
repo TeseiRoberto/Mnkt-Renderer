@@ -167,8 +167,25 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
         mnkt_framebufferClearColor(255, 116, 0, fb);
         mnkt_framebufferClearDepth(1.0f, fb);
 
-        mnkt_draw2DPoint(vertices, numOfVertices, 0, shader, fb);       // First test draw call
-        mnkt_draw2DPoint(vertices2, numOfVertices2, 0, shader, fb);     // Second test draw call
+        #define POINT_TEST
+
+        #ifdef POINT_TEST
+        mnkt_draw2DPoint(vertices, numOfVertices, 0, shader, fb);       // First point-test draw call
+        mnkt_draw2DPoint(vertices2, numOfVertices2, 0, shader, fb);     // Second point-test draw call
+        
+        #elif defined LINE_TEST
+        mnkt_draw2DLine(vertices, numOfVertices, shader, fb);           // First line-test draw call
+        mnkt_draw2DLine(vertices2, numOfVertices2, shader, fb);         // Second line-test draw call
+
+        #elif defined POLY_LINE_TEST
+        mnkt_draw2DPolyLine(vertices, numOfVertices, shader, fb);       // First polyline-test draw call
+        mnkt_draw2DPolyLine(vertices2, numOfVertices2, shader, fb);     // Second polyline-test draw call
+        
+        #else
+        mnkt_draw(vertices, numOfVertices, shader, fb);                 // First triangle-test draw call
+        mnkt_draw(vertices2, numOfVertices2, shader, fb);               // Second triangle-test draw call
+        
+        #endif
 }
 
 
