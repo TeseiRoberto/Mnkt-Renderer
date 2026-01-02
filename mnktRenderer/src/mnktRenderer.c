@@ -27,12 +27,13 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
                 return;
 
         Vec4_t clipCoords;
-        char* currVertexData = vertices;
-
+        Vec3_t screenCoords;
         ShaderParameter_t varyings[MAX_VARYING_PARAMS];
 
+        char* currVertexData = vertices;
+
         // Until points can be extracted from the given vertices
-        for(size_t i = 0; i < verticesCount; ++i)
+        for(size_t i = 0; i < verticesCount; ++i, currVertexData += shader->vertexSize)
         {
                 // Invoke the vertex shader on the current point
                 clipCoords = shader->vertexShader(currVertexData, varyings, shader->uniforms);
@@ -42,32 +43,28 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
 
                 // Perform clipping (for simplicity, as OpenGL standard specifies, we discard the point if its center is not inside the view volume)
                 if(clipCoords.x < -1.0f || clipCoords.x > 1.0f)
-                        goto SKIP_VERTEX;
+                        continue;
 
                 if(clipCoords.y < -1.0f || clipCoords.y > 1.0f)
-                        goto SKIP_VERTEX;
+                        continue;
 
                 if(clipCoords.z < -1.0f || clipCoords.z > 1.0f)
-                        goto SKIP_VERTEX;
+                        continue;
 
                 // Convert clip coordinates to screen coordinates
-                Vec3_t screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
+                screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
 
                 // Rasterize the point
                 mnkt_rasterize2DPoint(&screenCoords, pointSize, shader, varyings, fb);
-                
-        SKIP_VERTEX:
-                // Advance into the vertices data
-                currVertexData += shader->vertexSize;
         }
 }
 
 
 /**
  * @function mnkt_draw2DLine
- * Draws a 2D segmented line
- * @param vertices Array of data that defines the properties of each vertex that must be drawn.
- *      Vertices in this array are grouped two by two to form lines.
+ * Draws a sequence of lines non connected between each other
+ * @param vertices Array of data that defines the properties of each vertex that composes the lines to be drawn,
+ *      Vertices in this array are grouped two by two to form non connected lines.
  * @param verticesCount Number of elements stored in the given vertices array
  * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered line should be outputted
@@ -77,28 +74,51 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
 
-        /*Vec4_t clipCoords[2];
-        char* currVertexData = vertices;
+        Vec4_t clipCoords[2];
+        Vec3_t screenCoords[2];
+        ShaderParameter_t varyings[2][MAX_VARYING_PARAMS];
 
-        ShaderParameter_t varyings[MAX_VARYING_PARAMS];
+        char* currVertexData = vertices;
 
         // Until points can be extracted from the given vertices
         for(size_t i = 0; i + 2 <= verticesCount; i += 2)
         {
                 // Invoke vertex shader on each vertex
-                for(size_t j = 0: j < 2; ++j)
+                for(size_t j = 0; j < 2; ++j, currVertexData += shader->vertexSize)
                 {
-                        clipCoords[j] = shader->vertexShader(currVertexData, varyings, shader->uniforms);
-                
-                        // Advance into the vertices data
-                        currVertexData += shader->vertexSize;
+                        clipCoords[j] = shader->vertexShader(currVertexData, varyings[j], shader->uniforms);
+
+                        // Perform perspective division
+                        clipCoords[j] = mnkt_vec4_div( &clipCoords[j], clipCoords[j].w );
+
+                        // Perform clipping
+                        clipCoords[j].x = mnkt_clamp(clipCoords[j].x, -1.0f, 1.0f);
+                        clipCoords[j].y = mnkt_clamp(clipCoords[j].y, -1.0f, 1.0f);
+
+                        // Convert clip coordinates to screen coordinates
+                        screenCoords[j] = mnkt_clipToScreenCoords(clipCoords[j], fb->width, fb->height);
                 }
 
-                // TODO: Implement perspective division and clipping
+                mnkt_rasterize2DLine( &screenCoords[0], &screenCoords[1], shader, varyings[0], varyings[1], fb );
+        }
+}
 
-                // TODO: Rasterize the point and invoke the fragment shader
-                
-        }*/
+
+/**
+ * @function mnkt_draw2DPolyLine
+ * Draws a continuos segmented line
+ * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
+ *      Vertices in this array define the points that are to be connected by the line.
+ * @param verticesCount Number of elements stored in the given vertices array
+ * @param shader Shader program to be used for drawing
+ * @param fb Framebuffer on which the rendered line should be outputted
+*/
+void mnkt_draw2DPolyLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb)
+{
+        if(vertices == NULL || shader == NULL || fb == NULL)
+                return;
+
+        // TODO: Add implementation...
 }
 
 

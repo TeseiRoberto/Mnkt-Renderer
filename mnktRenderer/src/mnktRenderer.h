@@ -32,14 +32,26 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
 
 /**
  * @function mnkt_draw2DLine
- * Draws a 2D segmented line
- * @param vertices Array of data that defines the properties of each vertex that must be drawn.
- *      Vertices in this array are grouped two by two to form lines.
+ * Draws a sequence of lines non connected between each other
+ * @param vertices Array of data that defines the properties of each vertex that composes the lines to be drawn,
+ *      Vertices in this array are grouped two by two to form non connected lines.
  * @param verticesCount Number of elements stored in the given vertices array
  * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered line should be outputted
 */
 void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb);
+
+
+/**
+ * @function mnkt_draw2DPolyLine
+ * Draws a continuos segmented line
+ * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
+ *      Vertices in this array define the points that are to be connected by the line.
+ * @param verticesCount Number of elements stored in the given vertices array
+ * @param shader Shader program to be used for drawing
+ * @param fb Framebuffer on which the rendered line should be outputted
+*/
+void mnkt_draw2DPolyLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb);
 
 
 /**
