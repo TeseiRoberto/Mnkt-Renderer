@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
+#include <limits.h>
 
 #include "mnktRenderer.h"
 
@@ -13,6 +15,8 @@ void    renderImage(Framebuffer_t* fb, ShaderProgram_t* shader);
 
 Vec4_t  vertexShader(const void* vertex, ShaderParameter_t* varyings, const ShaderParameter_t* uniforms);
 Vec4_t  fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
+
+void    getRandomVertices(float vertices[12]);
 
 int     savePPMImage(const char* filename, const Framebuffer_t* fb);
 
@@ -141,51 +145,51 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
                 return;
         }
 
-        // For test purpouses let's render two simple overlapping triangles
- 
-        // Define the vertices of the first triangle (clockwise order)
+        // Clear framebuffer content
+        mnkt_framebuffer_clearColor(255, 116, 0, fb);
+        mnkt_framebuffer_clearDepth(1.0f, fb);
+        
+        // For test purpouses let's render a lot of random primitives
+        srandom(time(NULL));
+        
         float vertices[] = {
         //        x       y      z                r      g       b
-                -0.5f,  -0.5f,  1.0f,           0.0f,   0.0f,   0.0f,
-                0.0f,   0.5f,   1.0f,           0.0f,   0.0f,   0.0f,
-                0.5f,   -0.5f,  0.0f,           0.0f,   0.0f,   0.0f
+                -0.9f,  -0.5f,  0.0f,           1.0f,   0.0f,   0.0f,
+                0.9f,   0.5f,   0.0f,           1.0f,   0.0f,   0.0f,
         };
 
-        const size_t numOfVertices = sizeof(vertices) / (sizeof(vertices[0]) * 6);
-
-        // Define the vertices of the second triangle (clockwise order)
-        float vertices2[] = {
-        //        x       y      z                r      g       b
-                -0.5f,  -0.5f,  0.0f,           1.0f,   0.0f,   0.0f,
-                0.0f,   0.5f,   0.0f,           0.0f,   1.0f,   0.0f,
-                0.5f,   -0.5f,  0.0f,           0.0f,   0.0f,   1.0f
-        };
-
-        const size_t numOfVertices2 = sizeof(vertices2) / (sizeof(vertices2[0]) * 6);
-
-        // Clear framebuffer content
-        mnkt_framebufferClearColor(255, 116, 0, fb);
-        mnkt_framebufferClearDepth(1.0f, fb);
-
-        #define POINT_TEST
-
-        #ifdef POINT_TEST
-        mnkt_draw2DPoint(vertices, numOfVertices, 0, shader, fb);       // First point-test draw call
-        mnkt_draw2DPoint(vertices2, numOfVertices2, 0, shader, fb);     // Second point-test draw call
+        //#define POINT_TEST
+        #define LINE_TEST
+        //#define POLY_LINE_TEST
+        //#define TRIANGLE_TEST
         
-        #elif defined LINE_TEST
-        mnkt_draw2DLine(vertices, numOfVertices, shader, fb);           // First line-test draw call
-        mnkt_draw2DLine(vertices2, numOfVertices2, shader, fb);         // Second line-test draw call
+        // Draw 2048 random primitives
+        for(size_t i = 0; i < 2048; ++i)
+        {
+                getRandomVertices(vertices);
 
-        #elif defined POLY_LINE_TEST
-        mnkt_draw2DPolyLine(vertices, numOfVertices, shader, fb);       // First polyline-test draw call
-        mnkt_draw2DPolyLine(vertices2, numOfVertices2, shader, fb);     // Second polyline-test draw call
-        
-        #else
-        mnkt_draw(vertices, numOfVertices, shader, fb);                 // First triangle-test draw call
-        mnkt_draw(vertices2, numOfVertices2, shader, fb);               // Second triangle-test draw call
-        
-        #endif
+                #ifdef POINT_TEST
+                printf("Drawing point %lu at (%f, %f)\n", i + 1, vertices[0], vertices[1]);
+                mnkt_draw2DPoint(vertices, 1, 1, shader, fb);
+                
+                #elif defined LINE_TEST
+                printf("Drawing line %lu: (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7]);
+                mnkt_draw2DLine(vertices, 2, shader, fb);
+
+                #elif defined POLY_LINE_TEST
+                // TODO: Add implementation...
+                //printf("Drawing poly-line %lu with vertices: (%f, %f) to (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
+                //mnkt_draw2DPolyLine(vertices, 3, shader, fb);
+                break;
+                
+                #else
+                // TODO: Add implementation...
+                //printf("Drawing triangle %lu with vertices: (%f, %f), (%f, %f), (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
+                //mnkt_draw(vertices, 3, shader, fb);
+                break;
+
+                #endif
+        }
 }
 
 
@@ -226,6 +230,36 @@ Vec4_t fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t
                 .b = varyings[0].vec3.b,
                 1.0f
         };
+}
+
+
+/**
+ * @function getRandomVertices
+ * Populates the elements in the given array with random data
+ * Used to test the mnkt_draw* functions with arbitrary data
+ * @param vertices Array of floats that must be filled with random data
+*/
+void getRandomVertices(float vertices[12])
+{
+        // First position
+        vertices[0] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+        vertices[1] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+        vertices[2] = (float) rand() / (float) RAND_MAX;
+
+        // First color
+        vertices[3] = ( (float) rand() / (float) RAND_MAX);
+        vertices[4] = ( (float) rand() / (float) RAND_MAX);
+        vertices[5] = ( (float) rand() / (float) RAND_MAX);
+
+        // Second position
+        vertices[6] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+        vertices[7] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+        vertices[8] = (float) rand() / (float) RAND_MAX;
+
+        // Second color
+        vertices[9] = ( (float) rand() / (float) RAND_MAX);
+        vertices[10] = ( (float) rand() / (float) RAND_MAX);
+        vertices[11] = ( (float) rand() / (float) RAND_MAX);
 }
 
 
