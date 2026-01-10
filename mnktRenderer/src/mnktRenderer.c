@@ -55,7 +55,7 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
                 screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
 
                 // Rasterize the point
-                mnkt_rasterize2DPoint(&screenCoords, pointSize, shader, varyings, fb);
+                mnkt_rasterize2DPoint(screenCoords, pointSize, shader, varyings, fb);
         }
 }
 
@@ -91,22 +91,26 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
                         // Perform perspective division
                         clipCoords[j] = mnkt_vec4_div( &clipCoords[j], clipCoords[j].w );
 
-                        // Perform clipping
-                        clipCoords[j].x = mnkt_clamp(clipCoords[j].x, -1.0f, 1.0f);
-                        clipCoords[j].y = mnkt_clamp(clipCoords[j].y, -1.0f, 1.0f);
-
-                        // Convert clip coordinates to screen coordinates
-                        screenCoords[j] = mnkt_clipToScreenCoords(clipCoords[j], fb->width, fb->height);
+                        // TODO: FIX THIS!!! (need to compute point of intersection between line and ndc rect)
+                        clipCoords[j].x = mnkt_math_clamp(clipCoords[j].x, -1.0f, 1.0f);
+                        clipCoords[j].y = mnkt_math_clamp(clipCoords[j].y, -1.0f, 1.0f);
                 }
 
-                mnkt_rasterize2DLine( &screenCoords[0], &screenCoords[1], shader, varyings[0], varyings[1], fb );
+                // Perform clipping (TODO: Implement this function...)
+                //mnkt_clipLine(clipCoords[0], clipCoords[1], -1.0f, -1.0f, 1.0f, 1.0f);
+
+                // Convert clip coordinates to screen coordinates
+                screenCoords[0] = mnkt_clipToScreenCoords(clipCoords[0], fb->width, fb->height);
+                screenCoords[1] = mnkt_clipToScreenCoords(clipCoords[1], fb->width, fb->height);
+
+                mnkt_rasterize2DLine(screenCoords[0], screenCoords[1], shader, varyings[0], varyings[1], fb);
         }
 }
 
 
 /**
  * @function mnkt_draw2DPolyLine
- * Draws a continuos segmented line
+ * Draws a continuous segmented line
  * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
  *      Vertices in this array define the points that are to be connected by the line.
  * @param verticesCount Number of elements stored in the given vertices array

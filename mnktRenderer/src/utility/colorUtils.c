@@ -18,7 +18,7 @@
 */
 unsigned char mnkt_colorAsUChar(float color)
 {
-        color = mnkt_clamp(color, 0.0f, 1.0f);
+        color = mnkt_math_clamp(color, 0.0f, 1.0f);
 
         return color * 255;
 }

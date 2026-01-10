@@ -44,7 +44,7 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
 
 /**
  * @function mnkt_draw2DPolyLine
- * Draws a continuos segmented line
+ * Draws a continuous segmented line
  * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
  *      Vertices in this array define the points that are to be connected by the line.
  * @param verticesCount Number of elements stored in the given vertices array

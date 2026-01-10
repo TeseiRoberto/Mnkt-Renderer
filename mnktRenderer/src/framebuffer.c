@@ -10,14 +10,14 @@
 
 
 /**
- * @function mnkt_framebufferClearColor
+ * @function mnkt_framebuffer_clearColor
  * Sets the color of all pixels inside the framebuffer
  * @param r Red value to be used for the clear color
  * @param g Green value to be used for the clear color
  * @param b Blue value to be used for the clear color
  * @param framebuffer Framebuffer of which the color buffer must be cleared
 */
-void mnkt_framebufferClearColor(const unsigned char r, const unsigned char g, const unsigned char b, Framebuffer_t* fb)
+void mnkt_framebuffer_clearColor(const unsigned char r, const unsigned char g, const unsigned char b, Framebuffer_t* fb)
 {
         if(fb == NULL || fb->colorBuffer == NULL)
                 return;
@@ -35,12 +35,12 @@ void mnkt_framebufferClearColor(const unsigned char r, const unsigned char g, co
 
 
 /**
- * @function mnkt_framebufferClearDepth
+ * @function mnkt_framebuffer_clearDepth
  * Sets the depth values of all pixels inside the framebuffer
  * @param depth Depth value to be used for all pixels
  * @param framebuffer Framebuffer of which the depth buffer must be cleared
 */
-void mnkt_framebufferClearDepth(float depth, Framebuffer_t* fb)
+void mnkt_framebuffer_clearDepth(float depth, Framebuffer_t* fb)
 {
         if(fb == NULL || fb->depthBuffer == NULL)
                 return;

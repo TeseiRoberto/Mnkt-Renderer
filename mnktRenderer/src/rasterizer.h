@@ -10,6 +10,8 @@
 #define MNKT_RASTERIZER_H
 
 #include <stddef.h>
+#include <stdlib.h>
+#include <math.h>
 
 #include "math/vec.h"
 #include "math/mathUtils.h"
@@ -27,7 +29,7 @@
  * @param varyings Additional output parameters produced by the vertex shader (will be interpolated and passed as input to the fragment shader)
  * @param fb Framebuffer on which the point will be rasterized
 */
-void mnkt_rasterize2DPoint(const Vec3_t* screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
+void mnkt_rasterize2DPoint(Vec3_t screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
 
 
 /**
@@ -39,7 +41,7 @@ void mnkt_rasterize2DPoint(const Vec3_t* screenCoords, const size_t pointSize, c
  * @param varyingsB Additional output parameters produced by the vertex shader for the second point of the line (will be interpolated and passed as input to the fragment shader)
  * @param fb Framebuffer on which the line will be rasterized
 */
-void mnkt_rasterize2DLine(const Vec3_t* screenCoordsA, const Vec3_t* screenCoordsB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
+void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
 
 
 #endif // MNKT_RASTERIZER_H
