@@ -170,16 +170,16 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
 
                 #ifdef POINT_TEST
                 printf("Drawing point %lu at (%f, %f)\n", i + 1, vertices[0], vertices[1]);
-                mnkt_draw2DPoint(vertices, 1, 1, shader, fb);
+                mnkt_drawPoints(vertices, 1, 1, shader, fb);
                 
                 #elif defined LINE_TEST
                 printf("Drawing line %lu: (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7]);
-                mnkt_draw2DLine(vertices, 2, shader, fb);
+                mnkt_drawLines(vertices, 2, shader, fb);
 
                 #elif defined POLY_LINE_TEST
                 // TODO: Add implementation...
                 //printf("Drawing poly-line %lu with vertices: (%f, %f) to (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
-                //mnkt_draw2DPolyLine(vertices, 3, shader, fb);
+                //mnkt_drawPolyLine(vertices, 3, shader, fb);
                 break;
                 
                 #else

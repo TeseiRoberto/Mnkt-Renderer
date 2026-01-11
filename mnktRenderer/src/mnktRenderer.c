@@ -14,7 +14,7 @@ static Vec3_t   mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, s
 
 
 /**
- * @function mnkt_draw2DPoint
+ * @function mnkt_drawPoints
  * Draws a sequence of 2D points of the given size
  * @param vertices Array of data that defines the properties of each vertex that must be drawn.
  *      Vertices in this array are taken one by one to form points.
@@ -23,7 +23,7 @@ static Vec3_t   mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, s
  * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered points should be outputted
 */
-void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t pointSize, ShaderProgram_t* shader, Framebuffer_t* fb)
+void mnkt_drawPoints(void* vertices, const size_t verticesCount, const size_t pointSize, ShaderProgram_t* shader, Framebuffer_t* fb)
 {
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
@@ -57,7 +57,7 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
 
 
 /**
- * @function mnkt_draw2DLine
+ * @function mnkt_drawLines
  * Draws a sequence of lines non connected between each other
  * @param vertices Array of data that defines the properties of each vertex that composes the lines to be drawn,
  *      Vertices in this array are grouped two by two to form non connected lines.
@@ -65,7 +65,7 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
  * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered line should be outputted
 */
-void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb)
+void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb)
 {
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
@@ -100,7 +100,7 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
 
 
 /**
- * @function mnkt_draw2DPolyLine
+ * @function mnkt_drawPolyLine
  * Draws a continuous segmented line
  * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
  *      Vertices in this array define the points that are to be connected by the line.
@@ -108,7 +108,7 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
  * @param shader Shader program to be used for drawing
  * @param fb Framebuffer on which the rendered line should be outputted
 */
-void mnkt_draw2DPolyLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb)
+void mnkt_drawPolyLine(void* vertices, const size_t verticesCount, ShaderProgram_t* shader, Framebuffer_t* fb)
 {
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
