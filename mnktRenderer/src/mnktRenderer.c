@@ -7,8 +7,10 @@
 
 #include "mnktRenderer.h"
 
+static int      mnkt_isVertexVisible(const Vec4_t* vertex);
+static void     mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB);
 
-static          Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
+static Vec3_t   mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
 
 
 /**
@@ -38,18 +40,12 @@ void mnkt_draw2DPoint(void* vertices, const size_t verticesCount, const size_t p
                 // Invoke the vertex shader on the current point
                 clipCoords = shader->vertexShader(currVertexData, varyings, shader->uniforms);
                 
+                // Perform clipping (for simplicity, as OpenGL standard specifies, we discard the point if its center is not inside the view volume)
+                if( !mnkt_isVertexVisible(&clipCoords) )
+                        continue;
+
                 // Perform perspective division
                 clipCoords = mnkt_vec4_div(&clipCoords, clipCoords.w);
-
-                // Perform clipping (for simplicity, as OpenGL standard specifies, we discard the point if its center is not inside the view volume)
-                if(clipCoords.x < -1.0f || clipCoords.x > 1.0f)
-                        continue;
-
-                if(clipCoords.y < -1.0f || clipCoords.y > 1.0f)
-                        continue;
-
-                if(clipCoords.z < -1.0f || clipCoords.z > 1.0f)
-                        continue;
 
                 // Convert clip coordinates to screen coordinates
                 screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
@@ -85,24 +81,19 @@ void mnkt_draw2DLine(void* vertices, const size_t verticesCount, ShaderProgram_t
         {
                 // Invoke vertex shader on each vertex
                 for(size_t j = 0; j < 2; ++j, currVertexData += shader->vertexSize)
-                {
                         clipCoords[j] = shader->vertexShader(currVertexData, varyings[j], shader->uniforms);
 
-                        // Perform perspective division
-                        clipCoords[j] = mnkt_vec4_div( &clipCoords[j], clipCoords[j].w );
+                // Perform clipping
+                mnkt_clipLine(&clipCoords[0], &clipCoords[1]);
 
-                        // TODO: FIX THIS!!! (need to compute point of intersection between line and ndc rect)
-                        clipCoords[j].x = mnkt_math_clamp(clipCoords[j].x, -1.0f, 1.0f);
-                        clipCoords[j].y = mnkt_math_clamp(clipCoords[j].y, -1.0f, 1.0f);
+                // Perform perspective division and convert from clip space to screen space
+                for(size_t j = 0; j < 2; ++j)
+                {
+                        clipCoords[j] = mnkt_vec4_div(&clipCoords[j], clipCoords[j].w);
+                        screenCoords[j] = mnkt_clipToScreenCoords(clipCoords[j], fb->width, fb->height);
                 }
 
-                // Perform clipping (TODO: Implement this function...)
-                //mnkt_clipLine(clipCoords[0], clipCoords[1], -1.0f, -1.0f, 1.0f, 1.0f);
-
-                // Convert clip coordinates to screen coordinates
-                screenCoords[0] = mnkt_clipToScreenCoords(clipCoords[0], fb->width, fb->height);
-                screenCoords[1] = mnkt_clipToScreenCoords(clipCoords[1], fb->width, fb->height);
-
+                // Rasterize the line
                 mnkt_rasterize2DLine(screenCoords[0], screenCoords[1], shader, varyings[0], varyings[1], fb);
         }
 }
@@ -157,10 +148,38 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
                         currVertexData += shader->vertexSize;
                 }
 
-                // TODO: Implement perspective division and clipping
+                // TODO: Implement clipping and perspective division
         
                 // TODO: Rasterize the triangle and invoke the fragment shader
         }
+}
+
+
+/**
+ * @function mnkt_isVertexVisible
+ * Checks if the given vertex is visible according to its w parameter
+ * @param vertex The vertex to be checked, expressed in clip coordinates
+ * @return One if the vertex is visible, zero otherwise
+*/
+static int mnkt_isVertexVisible(const Vec4_t* vertex)
+{
+        return ( fabs(vertex->x) <= vertex->w && fabs(vertex->y) <= vertex->w && fabs(vertex->z) <= vertex->w );
+}
+
+
+/**
+ * @function mnkt_clipLine
+ * Performs clipping on the line defined by the given vertices
+ * @param pointA, pointB Points, expressed in clip coordinates, which define the line to be clipped
+*/
+static void mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB)
+{
+        // TODO: FIX THIS!!! (need to implement clipping properly...)
+        pointA->x = mnkt_math_clamp(pointA->x, -1.0f, 1.0f);
+        pointA->y = mnkt_math_clamp(pointA->y, -1.0f, 1.0f);
+
+        pointB->x = mnkt_math_clamp(pointB->x, -1.0f, 1.0f);
+        pointB->y = mnkt_math_clamp(pointB->y, -1.0f, 1.0f);
 }
 
 
@@ -172,7 +191,7 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
  * @param screenHeight The height of the screen
  * @return A Vec3 which defines the coordinates, in screen space, of the given point
 */
-Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
+static Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
 {
         return (Vec3_t)
         {

@@ -123,7 +123,7 @@ void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const Shad
  * @param pointB Screen coordinates of the rightmost point of the line
  * @note: For internal usage only!!!
 */
-void mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
+static void mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
         printf("rasterize2DHorLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
 
@@ -178,7 +178,7 @@ void mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram
  * @param pointB Screen coordinates of the top-most point of the line
  * @note: For internal usage only!!!
 */
-void mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
+static void mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
         printf("rasterize2DVertLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
         
@@ -235,7 +235,7 @@ void mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgra
  * @param varyings Additional parameters, outputted by the vertex shader, to be passed as input to the fragment shader
  * @param fb Frame buffer into which the fragment should be drawn
 */
-void mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb)
+static void mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb)
 {
         printf("Drawing frag at: %d, %d\n", (int) fragCoords->x, (int) fragCoords->y); // TODO: REMOVE ME!!!
         int discard = 0;
