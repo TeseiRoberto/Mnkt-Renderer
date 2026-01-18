@@ -16,7 +16,7 @@ void    renderImage(Framebuffer_t* fb, ShaderProgram_t* shader);
 Vec4_t  vertexShader(const void* vertex, ShaderParameter_t* varyings, const ShaderParameter_t* uniforms);
 Vec4_t  fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t* uniforms, const Vec2_t* fragCoords, int* discard);
 
-void    getRandomVertices(float vertices[12]);
+void    getRandomVertices(float* vertices, size_t verticesNum, size_t stride);
 
 int     savePPMImage(const char* filename, const Framebuffer_t* fb);
 
@@ -156,33 +156,41 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
         //        x       y      z                r      g       b
                 -0.9f,  -0.5f,  0.0f,           1.0f,   0.0f,   0.0f,
                 0.9f,   0.5f,   0.0f,           1.0f,   0.0f,   0.0f,
+                0.0f,   0.0f,   0.0f,           1.0f,   0.0f,   0.0f,
         };
 
         //#define POINT_TEST
-        #define LINE_TEST
-        //#define POLY_LINE_TEST
+        //#define LINE_TEST
+        #define POLY_LINE_TEST
         //#define TRIANGLE_TEST
         
         // Draw 2048 random primitives
         for(size_t i = 0; i < 2048; ++i)
         {
-                getRandomVertices(vertices);
-
                 #ifdef POINT_TEST
+                getRandomVertices(vertices, 1, 6);
+
                 printf("Drawing point %lu at (%f, %f)\n", i + 1, vertices[0], vertices[1]);
                 mnkt_drawPoints(vertices, 1, 1, shader, fb);
                 
+
                 #elif defined LINE_TEST
+                getRandomVertices(vertices, 2, 6);
+
                 printf("Drawing line %lu: (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7]);
                 mnkt_drawLines(vertices, 2, shader, fb);
 
+
                 #elif defined POLY_LINE_TEST
-                // TODO: Add implementation...
-                //printf("Drawing poly-line %lu with vertices: (%f, %f) to (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
-                //mnkt_drawPolyLine(vertices, 3, shader, fb);
-                break;
-                
+                getRandomVertices(vertices, 3, 6);
+
+                printf("Drawing poly-line %lu with vertices: (%f, %f) to (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
+                mnkt_drawPolyLine(vertices, 3, shader, fb);
+
+
                 #else
+                getRandomVertices(vertices, 3, 6);
+
                 // TODO: Add implementation...
                 //printf("Drawing triangle %lu with vertices: (%f, %f), (%f, %f), (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
                 //mnkt_draw(vertices, 3, shader, fb);
@@ -238,28 +246,27 @@ Vec4_t fragmentShader(const ShaderParameter_t* varyings, const ShaderParameter_t
  * Populates the elements in the given array with random data
  * Used to test the mnkt_draw* functions with arbitrary data
  * @param vertices Array of floats that must be filled with random data
+ * @param verticesNum Number of vertices for which random attributes must be generated
+ * @param stride Number of float values that composes a single vertex
 */
-void getRandomVertices(float vertices[12])
+void getRandomVertices(float* vertices, size_t verticesNum, size_t stride)
 {
-        // First position
-        vertices[0] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
-        vertices[1] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
-        vertices[2] = (float) rand() / (float) RAND_MAX;
+        size_t currIndex = 0;
 
-        // First color
-        vertices[3] = ( (float) rand() / (float) RAND_MAX);
-        vertices[4] = ( (float) rand() / (float) RAND_MAX);
-        vertices[5] = ( (float) rand() / (float) RAND_MAX);
+        for(size_t i = 0; i < verticesNum; ++i)
+        {
+                // Generate random position
+                vertices[currIndex + 0] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+                vertices[currIndex + 1] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
+                vertices[currIndex + 2] = (float) rand() / (float) RAND_MAX;
 
-        // Second position
-        vertices[6] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
-        vertices[7] = ( (float) rand() / (float) RAND_MAX) * (rand() % 2 == 0 ? 1 : -1);
-        vertices[8] = (float) rand() / (float) RAND_MAX;
+                // Generate random color
+                vertices[currIndex + 3] = ( (float) rand() / (float) RAND_MAX);
+                vertices[currIndex + 4] = ( (float) rand() / (float) RAND_MAX);
+                vertices[currIndex + 5] = ( (float) rand() / (float) RAND_MAX);
 
-        // Second color
-        vertices[9] = ( (float) rand() / (float) RAND_MAX);
-        vertices[10] = ( (float) rand() / (float) RAND_MAX);
-        vertices[11] = ( (float) rand() / (float) RAND_MAX);
+                currIndex += stride;
+        }
 }
 
 
