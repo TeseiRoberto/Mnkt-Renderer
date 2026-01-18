@@ -8,9 +8,9 @@
 #include "mnktRenderer.h"
 
 static int      mnkt_isVertexVisible(const Vec4_t* vertex);
-static void     mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB);
+static int      mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB);
 
-static Vec3_t   mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
+static Vec3_t   mnkt_ndcToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
 
 
 /**
@@ -47,8 +47,8 @@ void mnkt_drawPoints(void* vertices, const size_t verticesCount, const size_t po
                 // Perform perspective division
                 clipCoords = mnkt_vec4_div(&clipCoords, clipCoords.w);
 
-                // Convert clip coordinates to screen coordinates
-                screenCoords = mnkt_clipToScreenCoords(clipCoords, fb->width, fb->height);
+                // Convert ndc coordinates to screen coordinates
+                screenCoords = mnkt_ndcToScreenCoords(clipCoords, fb->width, fb->height);
 
                 // Rasterize the point
                 mnkt_rasterize2DPoint(screenCoords, pointSize, shader, varyings, fb);
@@ -83,14 +83,15 @@ void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t*
                 for(size_t j = 0; j < 2; ++j, currVertexData += shader->vertexSize)
                         clipCoords[j] = shader->vertexShader(currVertexData, varyings[j], shader->uniforms);
 
-                // Perform clipping
-                mnkt_clipLine(&clipCoords[0], &clipCoords[1]);
+                // Perform clipping (discard the line if clipping fails)
+                if( !mnkt_clipLine(&clipCoords[0], &clipCoords[1]) )
+                        continue;
 
-                // Perform perspective division and convert from clip space to screen space
+                // Perform perspective division and convert from ndc space to screen space
                 for(size_t j = 0; j < 2; ++j)
                 {
                         clipCoords[j] = mnkt_vec4_div(&clipCoords[j], clipCoords[j].w);
-                        screenCoords[j] = mnkt_clipToScreenCoords(clipCoords[j], fb->width, fb->height);
+                        screenCoords[j] = mnkt_ndcToScreenCoords(clipCoords[j], fb->width, fb->height);
                 }
 
                 // Rasterize the line
@@ -102,7 +103,7 @@ void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t*
 /**
  * @function mnkt_drawPolyLine
  * Draws a continuous segmented line
- * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn,
+ * @param vertices Array of data that defines the properties of each vertex that composes the line to be drawn.
  *      Vertices in this array define the points that are to be connected by the line.
  * @param verticesCount Number of elements stored in the given vertices array
  * @param shader Shader program to be used for drawing
@@ -113,7 +114,10 @@ void mnkt_drawPolyLine(void* vertices, const size_t verticesCount, ShaderProgram
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
 
-        // TODO: Add implementation...
+        char* currVertexData = vertices;
+
+        for(size_t i = 0; i + 2 <= verticesCount; ++i, currVertexData += shader->vertexSize)
+                mnkt_drawLines(currVertexData, 2, shader, fb);
 }
 
 
@@ -171,8 +175,9 @@ static int mnkt_isVertexVisible(const Vec4_t* vertex)
  * @function mnkt_clipLine
  * Performs clipping on the line defined by the given vertices
  * @param pointA, pointB Points, expressed in clip coordinates, which define the line to be clipped
+ * @return Zero if the given line does not intersect the clipping volume (must be discared), one otherwise
 */
-static void mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB)
+static int mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB)
 {
         // TODO: FIX THIS!!! (need to implement clipping properly...)
         pointA->x = mnkt_math_clamp(pointA->x, -1.0f, 1.0f);
@@ -180,24 +185,26 @@ static void mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB)
 
         pointB->x = mnkt_math_clamp(pointB->x, -1.0f, 1.0f);
         pointB->y = mnkt_math_clamp(pointB->y, -1.0f, 1.0f);
+
+        return 1;
 }
 
 
 /**
- * @function mnkt_clipToScreenCoords
- * Converts clip coordinates to screen coordinates (applies the viewport transform)
- * @param clipCoords The coordinates to be converted from clip to screen space
+ * @function mnkt_ndcToScreenCoords
+ * Converts NDC coordinates to screen coordinates (applies the viewport transform)
+ * @param ndcCoords The coordinates to be converted from NDC to screen space
  * @param screenWidth The width of the screen
  * @param screenHeight The height of the screen
  * @return A Vec3 which defines the coordinates, in screen space, of the given point
 */
-static Vec3_t mnkt_clipToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight)
+static Vec3_t mnkt_ndcToScreenCoords(Vec4_t ndcCoords, size_t screenWidth, size_t screenHeight)
 {
         return (Vec3_t)
         {
-                .x = ( (clipCoords.x + 1) / 2 ) * screenWidth,
-                .y = ( ( (-1 * clipCoords.y) + 1) / 2) * screenHeight,
-                .z = ( (clipCoords.z + 1) / 2 )
+                .x = ( (ndcCoords.x + 1) / 2 ) * screenWidth,
+                .y = ( ( (-1 * ndcCoords.y) + 1) / 2) * screenHeight,
+                .z = ( (ndcCoords.z + 1) / 2 )
         };
 }
 
