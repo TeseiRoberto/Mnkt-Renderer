@@ -8,7 +8,8 @@
 #include "mnktRenderer.h"
 
 static int      mnkt_isVertexVisible(const Vec4_t* vertex);
-static int      mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB);
+static int      mnkt_clipLine(Vec4_t vertices[2]);
+static int      mnkt_clipTriangle(Vec4_t vertices[3], Vec4_t additionalTriangle[3]);
 
 static Vec3_t   mnkt_ndcToScreenCoords(Vec4_t clipCoords, size_t screenWidth, size_t screenHeight);
 
@@ -51,7 +52,7 @@ void mnkt_drawPoints(void* vertices, const size_t verticesCount, const size_t po
                 screenCoords = mnkt_ndcToScreenCoords(clipCoords, fb->width, fb->height);
 
                 // Rasterize the point
-                mnkt_rasterize2DPoint(screenCoords, pointSize, shader, varyings, fb);
+                mnkt_rasterizePoint(screenCoords, pointSize, shader, varyings, fb);
         }
 }
 
@@ -84,7 +85,7 @@ void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t*
                         clipCoords[j] = shader->vertexShader(currVertexData, varyings[j], shader->uniforms);
 
                 // Perform clipping (discard the line if clipping fails)
-                if( !mnkt_clipLine(&clipCoords[0], &clipCoords[1]) )
+                if(mnkt_clipLine(clipCoords) != 2)
                         continue;
 
                 // Perform perspective division and convert from ndc space to screen space
@@ -95,7 +96,8 @@ void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t*
                 }
 
                 // Rasterize the line
-                mnkt_rasterize2DLine(screenCoords[0], screenCoords[1], shader, varyings[0], varyings[1], fb);
+                //mnkt_rasterizeLine(screenCoords[0], screenCoords[1], shader, varyings[0], varyings[1], fb);
+                mnkt_rasterizeLine(screenCoords, shader, varyings, fb);
         }
 }
 
@@ -135,26 +137,41 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
         if(vertices == NULL || shader == NULL || fb == NULL)
                 return;
 
-        Vec4_t clipCoords[3];
-        char* currVertexData = (char*) vertices;
+        Vec4_t clipCoords[6];
+        Vec3_t screenCoords[6];
+        ShaderParameter_t varyings[6][MAX_VARYING_PARAMS];
 
-        ShaderParameter_t varyings[3][MAX_VARYING_PARAMS];
+        char* currVertexData = (char*) vertices;
 
         // Until triangles can be built from the given vertices
         for(size_t i = 0; i + 3 <= verticesCount; i += 3)
         {
                 // Invoke vertex shader on each vertex
-                for(int j = 0; j < 3; ++j)
-                {
+                for(int j = 0; j < 3; ++j, currVertexData += shader->vertexSize)
                         clipCoords[j] = shader->vertexShader(currVertexData, varyings[j], shader->uniforms);
 
-                        // Advance into the vertices data
-                        currVertexData += shader->vertexSize;
+                // Perform clipping (discard the triangle if clipping fails)
+                size_t clippedVerticesNum = mnkt_clipTriangle( clipCoords, &(clipCoords[3]) );
+
+                if(clippedVerticesNum == 0)
+                        continue;
+
+                // Perform perspective division and convert from ndc to screen space
+                for(size_t j = 0; j < clippedVerticesNum; ++j)
+                {
+                        clipCoords[j] = mnkt_vec4_div(&clipCoords[j], clipCoords[j].w);
+                        screenCoords[j] = mnkt_ndcToScreenCoords(clipCoords[j], fb->width, fb->height);
                 }
 
-                // TODO: Implement clipping and perspective division
-        
-                // TODO: Rasterize the triangle and invoke the fragment shader
+                // Rasterize the triangle
+                mnkt_rasterizeTriangle(screenCoords, shader, varyings, fb);
+
+                // Rasterize the triangle resulted from the clipping process, if necessary
+                /*if(clippedVerticesNum > 3)
+                {
+                        mnkt_rasterizeTriangle(screenCoords[3], screenCoords[4], screenCoords[5], shader,
+                                                varyings[3], varyings[4], varyings[5], fb);
+                }*/
         }
 }
 
@@ -174,19 +191,39 @@ static int mnkt_isVertexVisible(const Vec4_t* vertex)
 /**
  * @function mnkt_clipLine
  * Performs clipping on the line defined by the given vertices
- * @param pointA, pointB Points, expressed in clip coordinates, which define the line to be clipped
- * @return Zero if the given line does not intersect the clipping volume (must be discared), one otherwise
+ * @param vertices Vertices, expressed in clip coordinates, which define the extremes of the line to be clipped
+ * @return The number of vertices correctly clipped (that must be redered).
+ *      Zero if the given line does not intersect the clipping volume (must be discared).
 */
-static int mnkt_clipLine(Vec4_t* pointA, Vec4_t* pointB)
+static int mnkt_clipLine(Vec4_t vertices[2])
 {
         // TODO: FIX THIS!!! (need to implement clipping properly...)
-        pointA->x = mnkt_math_clamp(pointA->x, -1.0f, 1.0f);
-        pointA->y = mnkt_math_clamp(pointA->y, -1.0f, 1.0f);
+        vertices[0].x = mnkt_math_clamp(vertices[0].x, -1.0f, 1.0f);
+        vertices[0].y = mnkt_math_clamp(vertices[0].y, -1.0f, 1.0f);
 
-        pointB->x = mnkt_math_clamp(pointB->x, -1.0f, 1.0f);
-        pointB->y = mnkt_math_clamp(pointB->y, -1.0f, 1.0f);
+        vertices[1].x = mnkt_math_clamp(vertices[1].x, -1.0f, 1.0f);
+        vertices[1].y = mnkt_math_clamp(vertices[1].y, -1.0f, 1.0f);
 
-        return 1;
+        return 2;
+}
+
+
+/**
+ * @function mnkt_clipTriangle
+ * Performs clipping on the triangle defined by the given vertices
+ * @param vertices Vertices, expressed in clip coordinates, which define the triangle to be clipped
+ * @param additionalTriangle Array in which the vertices of an additional triangle, resulting from the clipping process, are stored if necessary
+ * @return The number of vertices correctly clipped (that must be redered).
+ *      Zero if the given triangle does not intersect the clipping volume (must be discared).
+*/
+static int mnkt_clipTriangle(Vec4_t vertices[3], Vec4_t additionalTriangle[3])
+{
+        // TODO: FIX THIS!!! (need to implement clipping properly...)
+        vertices[0].x = mnkt_math_clamp(vertices[0].x, -1.0f, 1.0f);
+        vertices[1].y = mnkt_math_clamp(vertices[1].y, -1.0f, 1.0f);
+        vertices[2].z = mnkt_math_clamp(vertices[2].z, -1.0f, 1.0f);
+
+        return 3;
 }
 
 

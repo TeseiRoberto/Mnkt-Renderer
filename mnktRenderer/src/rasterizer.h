@@ -21,6 +21,7 @@
 
 
 /**
+ * @function mnkt_rasterizePoint
  * Rasterizes a 2D point and invokes the fragment shader for each fragment produced.
  * @param screenCoords Vector which defines the screen coordinates of the center of the point to be rasterized
  * @param pointSize Number of pixels that each side of the point takes up.
@@ -29,19 +30,31 @@
  * @param varyings Additional output parameters produced by the vertex shader (will be interpolated and passed as input to the fragment shader)
  * @param fb Framebuffer on which the point will be rasterized
 */
-void mnkt_rasterize2DPoint(Vec3_t screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
+void mnkt_rasterizePoint(Vec3_t screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t varyings[MAX_VARYING_PARAMS], Framebuffer_t* fb);
 
 
 /**
+ * @function mnkt_rasterizeLine
  * Rasterizes a 2D line and invokes the fragment shader for each fragment produced.
- * @param screenCoordsA Vector which defines the screen coordinates of the first point of the line to be rasterized
- * @param screenCoordsB Vector which defines the screen coordinates of the second point of the line to be rasterized
+ * @param screenCoords Array of vectors which defines the screen coordinates of the two extreme points of the line to be rasterized
  * @param shader Shader to be used to determine the color of each fragment produced
- * @param varyingsA Additional output parameters produced by the vertex shader for the first point of the line (will be interpolated and passed as input to the fragment shader)
- * @param varyingsB Additional output parameters produced by the vertex shader for the second point of the line (will be interpolated and passed as input to the fragment shader)
+ * @param varyings Additional output parameters produced by the vertex shader for the two extreme points of the line
+ *      (those will be interpolated and passed as input to the fragment shader)
  * @param fb Framebuffer on which the line will be rasterized
 */
-void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
+void mnkt_rasterizeLine(Vec3_t screenCoords[2], const ShaderProgram_t* shader, const ShaderParameter_t varyings[2][MAX_VARYING_PARAMS], Framebuffer_t* fb);
+
+
+/*
+ * @function mnkt_rasterizeTriangle
+ * Rasterizes a 2D triangle and invokes the fragment shader for each fragment produced.
+ * @param screenCoords Array of vectors which defines the screen coordinates of the vertices of the triangle to be rasterized
+ * @param shader Shader to be used to determine the color of each fragment produced
+ * @param varyings Additional output parameters produced by the vertex shader for the vertices of the triangle
+ *      (those will be interpolated across the triangle surface and passed as input to the fragment shader)
+ * @param fb Framebuffer on which the line will be rasterized
+*/
+void mnkt_rasterizeTriangle(Vec3_t screenCoords[3], const ShaderProgram_t* shader, const ShaderParameter_t varyings[3][MAX_VARYING_PARAMS], Framebuffer_t* fb);
 
 
 #endif // MNKT_RASTERIZER_H

@@ -12,13 +12,14 @@
 
 // Prototypes for internal functions
 
-static void     mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
-static void     mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
+static void     mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
+static void     mnkt_rasterizeVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
 
 static void     mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
 
 
 /**
+ * @function mnkt_rasterizePoint
  * Rasterizes a 2D point and invokes the fragment shader for each fragment produced.
  * @param screenCoords Vector which defines the screen coordinates of the center of the point to be rasterized
  * @param pointSize Number of pixels that each side of the point takes up.
@@ -27,7 +28,7 @@ static void     mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, siz
  * @param varyings Additional output parameters produced by the vertex shader (will be interpolated and passed as input to the fragment shader)
  * @param fb Framebuffer on which the point will be rasterized
 */
-void mnkt_rasterize2DPoint(Vec3_t screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb)
+void mnkt_rasterizePoint(Vec3_t screenCoords, const size_t pointSize, const ShaderProgram_t* shader, const ShaderParameter_t varyings[MAX_VARYING_PARAMS], Framebuffer_t* fb)
 {
         if(shader == NULL || varyings == NULL || fb == NULL)
                 return;
@@ -65,29 +66,29 @@ void mnkt_rasterize2DPoint(Vec3_t screenCoords, const size_t pointSize, const Sh
 
 
 /**
+ * @function mnkt_rasterizeLine
  * Rasterizes a 2D line and invokes the fragment shader for each fragment produced.
- * @param screenCoordsA Vector which defines the screen coordinates of the first point of the line to be rasterized
- * @param screenCoordsB Vector which defines the screen coordinates of the second point of the line to be rasterized
+ * @param screenCoords Array of vectors which defines the screen coordinates of the two extreme points of the line to be rasterized
  * @param shader Shader to be used to determine the color of each fragment produced
- * @param varyingsA Additional output parameters produced by the vertex shader for the first point of the line (will be interpolated and passed as input to the fragment shader)
- * @param varyingsB Additional output parameters produced by the vertex shader for the second point of the line (will be interpolated and passed as input to the fragment shader)
+ * @param varyings Additional output parameters produced by the vertex shader for the two extreme points of the line
+ *      (those will be interpolated across the line and passed as input to the fragment shader)
  * @param fb Framebuffer on which the line will be rasterized
 */
-void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
+void mnkt_rasterizeLine(Vec3_t screenCoords[2], const ShaderProgram_t* shader, const ShaderParameter_t varyings[2][MAX_VARYING_PARAMS], Framebuffer_t* fb)
 {
-        if(shader == NULL || varyingsA == NULL || varyingsB == NULL || fb == NULL)
+        if(shader == NULL || varyings == NULL || fb == NULL)
                 return;
 
-        // Ensure that screenCoordsA is in the valid range
-        if( !mnkt_math_pointIntersectRect(screenCoordsA.x, screenCoordsA.y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
+        Vec3_t* pointA = &screenCoords[0];
+        Vec3_t* pointB = &screenCoords[1];
+
+        // Ensure that pointA is in the valid range
+        if( !mnkt_math_pointIntersectRect(pointA->x, pointA->y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
                 return;
 
-        // Ensure that screenCoordsB is in the valid range
-        if( !mnkt_math_pointIntersectRect(screenCoordsB.x, screenCoordsB.y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
+        // Ensure that pointB is in the valid range
+        if( !mnkt_math_pointIntersectRect(pointB->x, pointB->y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
                 return;
-
-        Vec3_t* pointA = &screenCoordsA;
-        Vec3_t* pointB = &screenCoordsB;
 
         // Invoke a specific internal line function according to the line type
         if( abs((int) (pointA->x - pointB->x)) > abs((int) (pointA->y - pointB->y)) )
@@ -97,9 +98,9 @@ void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const Shad
                 // Invoke function ensuring that the first point parameter is the leftmost point
                 if(pointA->x > pointB->x)
                 {
-                        mnkt_rasterize2DHorLine(pointB, pointA, shader, varyingsB, varyingsA, fb);
+                        mnkt_rasterizeHorLine(pointB, pointA, shader, varyings[1], varyings[0], fb);
                 } else {
-                        mnkt_rasterize2DHorLine(pointA, pointB, shader, varyingsA, varyingsB, fb);
+                        mnkt_rasterizeHorLine(pointA, pointB, shader, varyings[0], varyings[1], fb);
                 }
 
         } else {
@@ -108,22 +109,22 @@ void mnkt_rasterize2DLine(Vec3_t screenCoordsA, Vec3_t screenCoordsB, const Shad
                 // Invoke function ensuring that the first point parameter is the bottom-most point
                 if(pointA->y > pointB->y)
                 {
-                        mnkt_rasterize2DVertLine(pointB, pointA, shader, varyingsB, varyingsA, fb);
+                        mnkt_rasterizeVertLine(pointB, pointA, shader, varyings[1], varyings[0], fb);
                 } else {
-                        mnkt_rasterize2DVertLine(pointA, pointB, shader, varyingsA, varyingsB, fb);
+                        mnkt_rasterizeVertLine(pointA, pointB, shader, varyings[0], varyings[1], fb);
                 }
         }
 }
 
 
 /**
- * @function mnkt_rasterize2DHorLine
+ * @function mnkt_rasterizeHorLine
  * Rasterizes an horizontal-ish 2D line and invokes the fragment shader for each fragment produced.
  * @param pointA Screen coordinates of the leftmost point of the line
  * @param pointB Screen coordinates of the rightmost point of the line
  * @note: For internal usage only!!!
 */
-static void mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
+static void mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
         printf("rasterize2DHorLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
 
@@ -178,7 +179,7 @@ static void mnkt_rasterize2DHorLine(Vec3_t* pointA, Vec3_t* pointB, const Shader
  * @param pointB Screen coordinates of the top-most point of the line
  * @note: For internal usage only!!!
 */
-static void mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
+static void mnkt_rasterizeVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
         printf("rasterize2DVertLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
         
@@ -222,6 +223,24 @@ static void mnkt_rasterize2DVertLine(Vec3_t* pointA, Vec3_t* pointB, const Shade
                 ++fragCoords.y;
                 fragIndex += fb->width;
         }
+}
+
+
+/*
+ * @function mnkt_rasterizeTriangle
+ * Rasterizes a 2D triangle and invokes the fragment shader for each fragment produced.
+ * @param screenCoords Array of vectors which defines the screen coordinates of the vertices of the triangle to be rasterized
+ * @param shader Shader to be used to determine the color of each fragment produced
+ * @param varyings Additional output parameters produced by the vertex shader for the vertices of the triangle
+ *      (those will be interpolated across the triangle surface and passed as input to the fragment shader)
+ * @param fb Framebuffer on which the line will be rasterized
+*/
+void mnkt_rasterizeTriangle(Vec3_t screenCoords[3], const ShaderProgram_t* shader, const ShaderParameter_t varyings[3][MAX_VARYING_PARAMS], Framebuffer_t* fb)
+{
+        if(shader == NULL || varyings == NULL || fb == NULL)
+                return;
+
+        // TODO: Add implementation...
 }
 
 
