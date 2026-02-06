@@ -10,10 +10,24 @@
 #include <stdio.h>
 
 
-// Prototypes for internal functions
+// Prototypes for internal functions and structs
+
+/**
+ * @struct BBox_t
+ * Models a bounding box (the minimal rectangular area that contains a set of specific points)
+*/
+typedef struct {
+        float   x;              ///< X coordinate of the top left corner of the box
+        float   y;              ///< Y coordinate of the top left corner of the box
+        float   width;          ///< Width of the box expressed
+        float   height;         ///< Height of the box expressed
+} BBox_t;
+
 
 static void     mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
 static void     mnkt_rasterizeVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
+
+static BBox_t   mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum);
 
 static void     mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
 
@@ -79,16 +93,15 @@ void mnkt_rasterizeLine(Vec3_t screenCoords[2], const ShaderProgram_t* shader, c
         if(shader == NULL || varyings == NULL || fb == NULL)
                 return;
 
+        // Ensure that all points are in the valid range
+        for(uint32_t i = 0; i < 2; ++i)
+        {
+                if( !mnkt_math_pointIntersectRect(screenCoords[i].x, screenCoords[i].y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
+                        return;
+        }
+
         Vec3_t* pointA = &screenCoords[0];
         Vec3_t* pointB = &screenCoords[1];
-
-        // Ensure that pointA is in the valid range
-        if( !mnkt_math_pointIntersectRect(pointA->x, pointA->y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
-                return;
-
-        // Ensure that pointB is in the valid range
-        if( !mnkt_math_pointIntersectRect(pointB->x, pointB->y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
-                return;
 
         // Invoke a specific internal line function according to the line type
         if( abs((int) (pointA->x - pointB->x)) > abs((int) (pointA->y - pointB->y)) )
@@ -240,7 +253,104 @@ void mnkt_rasterizeTriangle(Vec3_t screenCoords[3], const ShaderProgram_t* shade
         if(shader == NULL || varyings == NULL || fb == NULL)
                 return;
 
-        // TODO: Add implementation...
+        // Ensure that all vertices are in the valid range
+        for(uint32_t i = 0; i < 3; ++i)
+        {
+                if( !mnkt_math_pointIntersectRect(screenCoords[i].x, screenCoords[i].y, 0.0f, 0.0f, fb->width - 1, fb->height - 1) )
+                        return;
+        }
+
+        // Dummy implementation that draws the triangle perimeter =============
+        /*mnkt_rasterizeLine( screenCoords, shader, varyings, fb );
+        mnkt_rasterizeLine( &(screenCoords[1]), shader, varyings, fb );
+
+        Vec3_t coords[2] = { screenCoords[0], screenCoords[2] };
+        mnkt_rasterizeLine(coords, shader, varyings, fb);
+        // ====================================================================
+        */
+
+        // Compute triangle's bounding box
+        BBox_t bBox = mnkt_getScreenBBox(screenCoords, 3);
+
+        // Clamp the bounding box onto the framebuffer
+        bBox.x = mnkt_math_clamp(bBox.x, 0, fb->width - 1);
+        bBox.y = mnkt_math_clamp(bBox.y, 0, fb->height - 1);
+
+        bBox.width = mnkt_math_clamp(bBox.width, 0, fb->width - 1 - bBox.x);
+        bBox.height = mnkt_math_clamp(bBox.height, 0, fb->height - 1 - bBox.y);
+
+        // Dummy implementation that draws the triangle bounding box =============
+        size_t fragIndex = ( (size_t) bBox.y * fb->width) + (size_t) bBox.x;
+
+        for(size_t y = 0; y < (size_t) bBox.height; ++y)
+        {
+                for(size_t x = 0; x < (size_t) bBox.width; ++x)
+                {
+                        fb->colorBuffer[ fragIndex * 3 ] = 255;
+                        fb->colorBuffer[ (fragIndex * 3) + 1 ] = 0;
+                        fb->colorBuffer[ (fragIndex * 3) + 2 ] = 0;
+
+                        ++fragIndex;
+                }
+
+                fragIndex += fb->width;                 // Go to line below
+                fragIndex -= (size_t) bBox.width;       // Reset to start pf BBox
+        }
+        // =======================================================================
+}
+
+
+/**
+ * @function mnkt_getScreenBBox
+ * @param points Array of points, expressed in screen coordinates, for which the bounding box must be computed
+ * @param pointsNum The number of points given in the array
+ * @return The bounding box that contains all the points given as parameters
+*/
+static BBox_t mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum)
+{
+        if(points == NULL || pointsNum == 0)
+        {
+                return (BBox_t) {
+                        .x = 0,
+                        .y = 0,
+                        .width = 0,
+                        .height = 0,
+                };
+        }
+        
+        BBox_t box = {
+                .x      = points[0].x,
+                .y      = points[0].y,
+                .width  = points[0].x,
+                .height = points[0].y,
+        };
+        
+        // Search min and max values of x and y
+        for(size_t i = 1; i < pointsNum; ++i)
+        {
+                if(points[i].x < box.x)
+                {
+                        box.x = points[i].x;
+
+                } else if(points[i].x > box.x)
+                {
+                        box.width = points[i].x;
+                }
+
+                if(points[i].y < box.y)
+                {
+                        box.y = points[i].y;
+
+                } else if(points[i].y > box.y)
+                {
+                        box.height = points[i].y;
+                }
+        }
+
+        box.width -= box.x;     // Compute box width (currently in such variable is stored the max x value found)
+        box.height -= box.y;    // Compute box height (currently in such variable is stored the max y value found)
+        
+        return box;
 }
 
 

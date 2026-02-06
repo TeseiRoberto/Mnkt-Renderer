@@ -8,6 +8,8 @@
 #ifndef MNKT_MATH_UTILS_H
 #define MNKT_MATH_UTILS_H
 
+#include <stddef.h>
+
 
 /**
  * @function mnkt_math_clamp

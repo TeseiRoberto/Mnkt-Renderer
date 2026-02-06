@@ -153,7 +153,7 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
                 // Perform clipping (discard the triangle if clipping fails)
                 size_t clippedVerticesNum = mnkt_clipTriangle( clipCoords, &(clipCoords[3]) );
 
-                if(clippedVerticesNum == 0)
+                if(clippedVerticesNum < 3)
                         continue;
 
                 // Perform perspective division and convert from ndc to screen space
@@ -166,12 +166,9 @@ void mnkt_draw(void* vertices, const size_t verticesCount, ShaderProgram_t* shad
                 // Rasterize the triangle
                 mnkt_rasterizeTriangle(screenCoords, shader, varyings, fb);
 
-                // Rasterize the triangle resulted from the clipping process, if necessary
-                /*if(clippedVerticesNum > 3)
-                {
-                        mnkt_rasterizeTriangle(screenCoords[3], screenCoords[4], screenCoords[5], shader,
-                                                varyings[3], varyings[4], varyings[5], fb);
-                }*/
+                // Rasterize the additional triangle produced by the clipping process, if necessary
+                if(clippedVerticesNum > 3)
+                        mnkt_rasterizeTriangle( &(screenCoords[3]), shader, varyings + 3, fb );
         }
 }
 
