@@ -96,7 +96,6 @@ void mnkt_drawLines(void* vertices, const size_t verticesCount, ShaderProgram_t*
                 }
 
                 // Rasterize the line
-                //mnkt_rasterizeLine(screenCoords[0], screenCoords[1], shader, varyings[0], varyings[1], fb);
                 mnkt_rasterizeLine(screenCoords, shader, varyings, fb);
         }
 }

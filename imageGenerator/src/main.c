@@ -39,7 +39,7 @@ int main()
 
         // Deallocate all resources
         destroyResources(&fb, &shader);
-        
+
         return 0;
 }
 
@@ -161,8 +161,8 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
 
         //#define POINT_TEST
         //#define LINE_TEST
-        #define POLY_LINE_TEST
-        //#define TRIANGLE_TEST
+        //#define POLY_LINE_TEST
+        #define TRIANGLE_TEST
         
         // Draw 2048 random primitives
         for(size_t i = 0; i < 2048; ++i)
@@ -173,13 +173,11 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
                 printf("Drawing point %lu at (%f, %f)\n", i + 1, vertices[0], vertices[1]);
                 mnkt_drawPoints(vertices, 1, 1, shader, fb);
                 
-
                 #elif defined LINE_TEST
                 getRandomVertices(vertices, 2, 6);
 
                 printf("Drawing line %lu: (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7]);
                 mnkt_drawLines(vertices, 2, shader, fb);
-
 
                 #elif defined POLY_LINE_TEST
                 getRandomVertices(vertices, 3, 6);
@@ -187,15 +185,11 @@ void renderImage(Framebuffer_t* fb, ShaderProgram_t* shader)
                 printf("Drawing poly-line %lu with vertices: (%f, %f) to (%f, %f) to (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
                 mnkt_drawPolyLine(vertices, 3, shader, fb);
 
-
                 #else
                 getRandomVertices(vertices, 3, 6);
 
-                // TODO: Add implementation...
-                //printf("Drawing triangle %lu with vertices: (%f, %f), (%f, %f), (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
-                //mnkt_draw(vertices, 3, shader, fb);
-                break;
-
+                printf("Drawing triangle %lu with vertices: (%f, %f), (%f, %f), (%f, %f)\n", i + 1, vertices[0], vertices[1], vertices[6], vertices[7], vertices[12], vertices[13]);
+                mnkt_draw(vertices, 3, shader, fb);
                 #endif
         }
 }

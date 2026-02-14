@@ -28,6 +28,7 @@ static void     mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const Shad
 static void     mnkt_rasterizeVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb);
 
 static BBox_t   mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum);
+static Vec3_t   mnkt_getTriangleBarycentricCoords(const Vec3_t vertices[3], const Vec2_t* point);
 
 static void     mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb);
 
@@ -139,8 +140,6 @@ void mnkt_rasterizeLine(Vec3_t screenCoords[2], const ShaderProgram_t* shader, c
 */
 static void mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
-        printf("rasterize2DHorLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
-
         // Compute deltas
         int32_t dx = pointB->x - pointA->x;
         int32_t dy = pointB->y - pointA->y;
@@ -164,7 +163,6 @@ static void mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderPr
         {
                 // TODO: Interpolate varyings and vertex depth values across the line...
                 
-                printf("fragIndex: %lu\n", fragIndex);
                 mnkt_drawFragment(&fragCoords, pointA->z, fragIndex, shader, varyingsA, fb);
 
                 if(distance > 0)
@@ -194,8 +192,6 @@ static void mnkt_rasterizeHorLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderPr
 */
 static void mnkt_rasterizeVertLine(Vec3_t* pointA, Vec3_t* pointB, const ShaderProgram_t* shader, const ShaderParameter_t* varyingsA, const ShaderParameter_t* varyingsB, Framebuffer_t* fb)
 {
-        printf("rasterize2DVertLine called (pointA: %f, %f, pointB: %f, %f)!\n", pointA->x, pointA->y, pointB->x, pointB->y);
-        
         // Compute deltas
         int32_t dx = pointB->x - pointA->x;
         int32_t dy = pointB->y - pointA->y;
@@ -260,43 +256,57 @@ void mnkt_rasterizeTriangle(Vec3_t screenCoords[3], const ShaderProgram_t* shade
                         return;
         }
 
-        // Dummy implementation that draws the triangle perimeter =============
-        /*mnkt_rasterizeLine( screenCoords, shader, varyings, fb );
-        mnkt_rasterizeLine( &(screenCoords[1]), shader, varyings, fb );
-
-        Vec3_t coords[2] = { screenCoords[0], screenCoords[2] };
-        mnkt_rasterizeLine(coords, shader, varyings, fb);
-        // ====================================================================
-        */
-
         // Compute triangle's bounding box
         BBox_t bBox = mnkt_getScreenBBox(screenCoords, 3);
 
         // Clamp the bounding box onto the framebuffer
         bBox.x = mnkt_math_clamp(bBox.x, 0, fb->width - 1);
         bBox.y = mnkt_math_clamp(bBox.y, 0, fb->height - 1);
+        bBox.width = mnkt_math_clamp(bBox.width, 0, fb->width - 1);
+        bBox.height = mnkt_math_clamp(bBox.height, 0, fb->height - 1);
 
-        bBox.width = mnkt_math_clamp(bBox.width, 0, fb->width - 1 - bBox.x);
-        bBox.height = mnkt_math_clamp(bBox.height, 0, fb->height - 1 - bBox.y);
+        // Threshold value used to determine if barycentric coordinates are valid
+        const float EPSILON = 0.00001f;
 
-        // Dummy implementation that draws the triangle bounding box =============
-        size_t fragIndex = ( (size_t) bBox.y * fb->width) + (size_t) bBox.x;
+        Vec2_t fragCoords = { .x = bBox.x, .y = bBox.y };
+        Vec2_t fragCenterCoords = { .x = bBox.x + 0.5f, .y = bBox.y + 0.5f };
 
+        size_t fragIndex = ((size_t) bBox.y * fb->width) + (size_t) bBox.x;
+
+        // For each fragment in the bounding box
         for(size_t y = 0; y < (size_t) bBox.height; ++y)
         {
                 for(size_t x = 0; x < (size_t) bBox.width; ++x)
                 {
-                        fb->colorBuffer[ fragIndex * 3 ] = 255;
-                        fb->colorBuffer[ (fragIndex * 3) + 1 ] = 0;
-                        fb->colorBuffer[ (fragIndex * 3) + 2 ] = 0;
+                        // Compute barycentric coordinates for the current fragment
+                        Vec3_t barycentricCoords = mnkt_getTriangleBarycentricCoords(screenCoords, &fragCenterCoords);
 
+                        // If the fragment is inside the triangle
+                        if(barycentricCoords.x > -EPSILON && barycentricCoords.y > -EPSILON && barycentricCoords.z > -EPSILON)
+                        {
+                                // TODO: interpolate varyings and depth value (use early depth test to avoid varyings interpolation if not needed)
+                                
+                                mnkt_drawFragment(&fragCoords, screenCoords[0].z, fragIndex, shader, *varyings, fb);
+                        }
+                
+                        // Move to the next fragment
                         ++fragIndex;
+        
+                        ++fragCoords.x;
+                        ++fragCenterCoords.x;
                 }
 
-                fragIndex += fb->width;                 // Go to line below
-                fragIndex -= (size_t) bBox.width;       // Reset to start pf BBox
+                // Update fragment index (go to line below, at the start of the BBox)
+                fragIndex += fb->width;
+                fragIndex -= (size_t) bBox.width;
+
+                // Update fragment coordinates
+                ++fragCoords.y;
+                fragCoords.x = bBox.x;
+
+                ++fragCenterCoords.y;
+                fragCenterCoords.x = bBox.x + 0.5f;
         }
-        // =======================================================================
 }
 
 
@@ -332,7 +342,7 @@ static BBox_t mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum)
                 {
                         box.x = points[i].x;
 
-                } else if(points[i].x > box.x)
+                } else if(points[i].x > box.width)
                 {
                         box.width = points[i].x;
                 }
@@ -341,7 +351,7 @@ static BBox_t mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum)
                 {
                         box.y = points[i].y;
 
-                } else if(points[i].y > box.y)
+                } else if(points[i].y > box.height)
                 {
                         box.height = points[i].y;
                 }
@@ -351,6 +361,42 @@ static BBox_t mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum)
         box.height -= box.y;    // Compute box height (currently in such variable is stored the max y value found)
         
         return box;
+}
+
+
+/**
+ * @function mnkt_getTriangleBarycentricCoords
+ * Computes the barycentric coordinates of a point relative to a triangle
+ * @param vertices Vertices of the triangle expressed in counter-clockwise order
+ * @param point Point of which barycentric coordinates must be computed
+ * @return The barycentric coordinates of the given point relative to the specified triangle
+ * @note: This function assumes that the given point lies on the same plane of the triangle, 
+ *      all the z coordinates of the given vertices are ignored
+*/
+static Vec3_t mnkt_getTriangleBarycentricCoords(const Vec3_t vertices[3], const Vec2_t* point)
+{
+        Vec2_t a = { vertices[0].x, vertices[0].y };
+        Vec2_t b = { vertices[1].x, vertices[1].y };
+        Vec2_t c = { vertices[2].x, vertices[2].y };
+
+        // Compute two of the triangle's edges
+        Vec2_t ab = mnkt_vec2_sub( &b, &a );
+        Vec2_t ac = mnkt_vec2_sub( &c, &a );
+
+        // Compute vector from vertex A to the point P
+        Vec2_t ap = mnkt_vec2_sub( point, &a );
+
+        float precomputedDenom = 1 / ( (ab.x * ac.y) - (ab.y * ac.x) );
+
+        // Compute v and w barycentric coords
+        float v = (ac.y * ap.x - ac.x * ap.y) * precomputedDenom;
+        float w = (ab.x * ap.y - ab.y * ap.x) * precomputedDenom;
+
+        return (Vec3_t) {
+                .x = 1.0f - v - w,
+                .y = v,
+                .z = w
+        };
 }
 
 
@@ -366,13 +412,11 @@ static BBox_t mnkt_getScreenBBox(Vec3_t* points, size_t pointsNum)
 */
 static void mnkt_drawFragment(const Vec2_t* fragCoords, float fragDepth, size_t fragIndex, const ShaderProgram_t* shader, const ShaderParameter_t* varyings, Framebuffer_t* fb)
 {
-        printf("Drawing frag at: %d, %d\n", (int) fragCoords->x, (int) fragCoords->y); // TODO: REMOVE ME!!!
         int discard = 0;
 
         // Perform depth test
         if(fb->depthBuffer[fragIndex] <= fragDepth)
         {
-                printf("depth test failed!!!\n");
                 // If current fragment's depth is greater than what is already stored in the depth buffer, then skip the fragment
                 return;
         }
