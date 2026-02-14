@@ -9,6 +9,7 @@
 #define MNKT_MATH_UTILS_H
 
 #include <stddef.h>
+#include <math.h>
 
 
 /**
@@ -22,6 +23,17 @@
  * max, if value is greater than max.
 */
 float   mnkt_math_clamp(float value, float min, float max);
+
+
+/**
+ * @function mnkt_math_lerp
+ * Computes the linear interpolation between two values
+ * @param a First value to be inetrpolated
+ * @param b Second value to be inetrpolated
+ * @param t Interpolation parameter
+ * @return The linear interpolation between a and b at the t value, if t is in range [0, 1], a otherwise
+*/
+float   mnkt_math_lerp(float a, float b, float t);
 
 
 /**

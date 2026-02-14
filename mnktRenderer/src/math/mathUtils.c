@@ -28,6 +28,24 @@ float mnkt_math_clamp(float value, float min, float max)
 
 
 /**
+ * @function mnkt_math_lerp
+ * Computes the linear interpolation between two values
+ * @param a First value to be inetrpolated
+ * @param b Second value to be inetrpolated
+ * @param t Interpolation parameter
+ * @return The linear interpolation between a and b at the t value, if t is in range [0, 1], a otherwise
+*/
+float mnkt_math_lerp(float a, float b, float t)
+{
+        // Check validity of t
+        if( !isfinite(t) )
+                return a;
+
+        return a + t * (b - a);
+}
+
+
+/**
  * @function mnkt_math_pointIntersectRect
  * Checks if the given point is inside, or on the border of, the given rectangle.
  * @param x X coordinate of the point to be checked

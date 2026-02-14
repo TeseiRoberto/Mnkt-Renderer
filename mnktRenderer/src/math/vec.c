@@ -64,6 +64,15 @@ Vec2_t mnkt_vec2_clamp(const Vec2_t* a, const Vec2_t min, const Vec2_t max)
 }
 
 
+Vec2_t mnkt_vec2_lerp(const Vec2_t* a, const Vec2_t* b, float t)
+{
+        return (Vec2_t) {
+                .x = mnkt_math_lerp(a->x, b->x, t),
+                .y = mnkt_math_lerp(a->y, b->y, t)
+        };
+}
+
+
 Vec3_t mnkt_vec3_add(const Vec3_t* a, const Vec3_t* b)
 {
         return (Vec3_t)
@@ -136,6 +145,16 @@ Vec3_t mnkt_vec3_clamp(const Vec3_t* a, const Vec3_t min, const Vec3_t max)
 }
 
 
+Vec3_t mnkt_vec3_lerp(const Vec3_t* a, const Vec3_t* b, float t)
+{
+        return (Vec3_t) {
+                .x = mnkt_math_lerp(a->x, b->x, t),
+                .y = mnkt_math_lerp(a->y, b->y, t),
+                .z = mnkt_math_lerp(a->z, b->z, t)
+        };
+}
+
+
 Vec4_t mnkt_vec4_add(const Vec4_t* a, const Vec4_t* b)
 {
         return (Vec4_t)
@@ -197,5 +216,16 @@ Vec4_t mnkt_vec4_clamp(const Vec4_t* a, const Vec4_t min, const Vec4_t max)
                 .y = mnkt_math_clamp(a->y, min.y, max.y),
                 .z = mnkt_math_clamp(a->z, min.z, max.z),
                 .w = mnkt_math_clamp(a->w, min.w, max.w)
+        };
+}
+
+
+Vec4_t mnkt_vec4_lerp(const Vec4_t* a, const Vec4_t* b, float t)
+{
+        return (Vec4_t) {
+                .x = mnkt_math_lerp(a->x, b->x, t),
+                .y = mnkt_math_lerp(a->y, b->y, t),
+                .z = mnkt_math_lerp(a->z, b->z, t),
+                .w = mnkt_math_lerp(a->w, b->w, t)
         };
 }
