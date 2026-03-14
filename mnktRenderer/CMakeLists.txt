@@ -9,6 +9,7 @@ set ( TARGET_NAME ${PROJECT_NAME} )
 # Set source files to be compiled
 set (SRCS
         src/math/vec.c
+        src/math/mat4x4.c
         src/math/mathUtils.c
 
         src/utility/colorUtils.c
@@ -20,6 +21,8 @@ set (SRCS
 
 add_library(${TARGET_NAME} ${SRCS})
 
+# Link C math library
+target_link_libraries(${TARGET_NAME} m)
 
 # Add flags for errors during compilation
 if(MSVC)

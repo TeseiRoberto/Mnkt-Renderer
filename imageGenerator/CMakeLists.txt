@@ -17,8 +17,9 @@ set (SRCS
 
 add_executable(${TARGET_NAME} ${SRCS})
 
+# Link mnktRenderer and C math libraries
 target_include_directories(${TARGET_NAME} PRIVATE ${MNKT_RENDERER_INCLUDE_PATH})
-target_link_libraries(${TARGET_NAME} ${MNKT_RENDERER_LIB_PATH})
+target_link_libraries(${TARGET_NAME} ${MNKT_RENDERER_LIB_PATH} m)
 
 
 # Add flags for errors during compilation
