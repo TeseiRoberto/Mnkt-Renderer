@@ -28,7 +28,7 @@
  * @macro MAX_UNIFORM_PARAMS
  * Maximum number of uniform parameters that can be set for a shader program
 */
-#define MAX_UNIFORM_PARAMS              8
+#define MAX_UNIFORM_PARAMS      8
 
 
 /**

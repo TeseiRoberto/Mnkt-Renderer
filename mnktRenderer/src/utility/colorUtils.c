@@ -10,7 +10,7 @@
 
 
 /**
- * @function mnkt_colorAsUChar
+ * @brief mnkt_colorAsUChar
  * Converts the given color from float to the corresponding unsigned char value.
  * @param color The value to be converted.
  *      Should be in range [0.0f, 1.0f], a smaller/greater value will be clamped
@@ -25,7 +25,7 @@ unsigned char mnkt_colorAsUChar(float color)
 
 
 /**
- * @function mnkt_colorAsFloat
+ * @brief mnkt_colorAsFloat
  * Converts the given color from an unsigned char to a normalized float value.
  * @param color The value to be converted.
  * @return A float value in the range [0.0f, 1.0f] that represents the given color value

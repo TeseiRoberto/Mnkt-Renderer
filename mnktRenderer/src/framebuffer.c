@@ -10,7 +10,7 @@
 
 
 /**
- * @function mnkt_framebuffer_clearColor
+ * @brief mnkt_framebuffer_clearColor
  * Sets the color of all pixels inside the framebuffer
  * @param r Red value to be used for the clear color
  * @param g Green value to be used for the clear color
@@ -35,7 +35,7 @@ void mnkt_framebuffer_clearColor(const unsigned char r, const unsigned char g, c
 
 
 /**
- * @function mnkt_framebuffer_clearDepth
+ * @brief mnkt_framebuffer_clearDepth
  * Sets the depth values of all pixels inside the framebuffer
  * @param depth Depth value to be used for all pixels
  * @param framebuffer Framebuffer of which the depth buffer must be cleared

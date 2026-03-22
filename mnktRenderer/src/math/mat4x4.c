@@ -9,7 +9,7 @@
 
 
 /**
- * @function mnkt_mat4x4_identity
+ * @brief mnkt_mat4x4_identity
  * @return An identity matrix
 */
 Mat4x4_t mnkt_mat4x4_identity()
@@ -26,7 +26,7 @@ Mat4x4_t mnkt_mat4x4_identity()
 
 
 /**
- * @function mnkt_mat4x4
+ * @brief mnkt_mat4x4
  * @param value Value to be used to fill the matrix diagonal
  * @return A matrix filled with zeros and the given value on the diagonal
 */
@@ -155,7 +155,7 @@ Mat4x4_t mnkt_mat4x4_scalarDiv(const Mat4x4_t* mat, float value)
 
 
 /**
- * @function mnkt_mat4x4_translation
+ * @brief mnkt_mat4x4_translation
  * @param x, y, z Coordinates towards which the translation must be performed
  * @return A translation matrix
 */
@@ -172,7 +172,7 @@ Mat4x4_t mnkt_mat4x4_translation(float x, float y, float z)
 
 
 /**
- * @function mnkt_mat4x4_translation
+ * @brief mnkt_mat4x4_translation
  * @param axis Axis around wich the rotation must be performed
  * @param angle Angle, expressed in radiants, of the rotation to be performed
  * @return A rotation matrix
@@ -217,7 +217,7 @@ Mat4x4_t mnkt_mat4x4_rotation(Vec3_t axis, float angle)
 
 
 /**
- * @function mnkt_mat4x4_translation
+ * @brief mnkt_mat4x4_translation
  * @param x, y, z Values, relative to each axis, that must be used to perform the scaling
  * @return A scaling matrix
 */

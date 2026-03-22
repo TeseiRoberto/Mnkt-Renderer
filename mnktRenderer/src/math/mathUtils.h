@@ -13,21 +13,21 @@
 
 
 /**
- * @macro DEG_TO_RAD
+ * @brief DEG_TO_RAD
  * Utility macro to perform conversion from degrees to radiants
 */
 #define DEG_TO_RAD(x) ( (x * M_PI) / 180.0 )
 
 
 /**
- * @macro RAD_TO_DEG
+ * @brief RAD_TO_DEG
  * Utility macro to perform conversion from radiants to degrees
 */
 #define RAD_TO_DEG(x) ( (x * 180.0) / M_PI )
 
 
 /**
- * @function mnkt_math_clamp
+ * @brief mnkt_math_clamp
  * Clamps the given value to the range [min, max]
  * @param value The value to be clamped
  * @param min Minimum value that the returned value can have
@@ -40,7 +40,7 @@ float   mnkt_math_clamp(float value, float min, float max);
 
 
 /**
- * @function mnkt_math_lerp
+ * @brief mnkt_math_lerp
  * Computes the linear interpolation between two values
  * @param a First value to be inetrpolated
  * @param b Second value to be inetrpolated
@@ -51,7 +51,7 @@ float   mnkt_math_lerp(float a, float b, float t);
 
 
 /**
- * @function mnkt_math_pointIntersectRect
+ * @brief mnkt_math_pointIntersectRect
  * Checks if the given point is inside, or on the border of, the given rectangle.
  * @param x X coordinate of the point to be checked
  * @param y Y coordinate of the point to be checked
